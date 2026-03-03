@@ -1,8 +1,6 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-
-const paymentSchema = new Schema(
+const paymentSchema = new mongoose.Schema(
     {
         payment_initiated_on: Date,
         payment_method: {
@@ -19,11 +17,11 @@ const paymentSchema = new Schema(
             default: 'Pending'
         },
 
-        hiree: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        hirer: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        vehicle: { type: Schema.Types.ObjectId, ref: 'Vehicle', required: true },
-        vehicle_hire: { type: Schema.Types.ObjectId, ref: 'VehicleHire', required: true },
-        paid_by: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        hiree: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        hirer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        vehicle: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle', required: true },
+        vehicle_hire: { type: mongoose.Schema.Types.ObjectId, ref: 'VehicleHire', required: true },
+        paid_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
         deleted_at: String
     },
     {

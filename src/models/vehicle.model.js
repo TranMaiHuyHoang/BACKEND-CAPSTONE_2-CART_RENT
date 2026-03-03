@@ -1,9 +1,6 @@
-const { required } = require('joi');
-const { update } = require('lodash');
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-const vehicleSchema = newSchema(
+const vehicleSchema = new mongoose.Schema(
     {
         vehicle_type: {
             type: String,
@@ -11,8 +8,7 @@ const vehicleSchema = newSchema(
             enum: ['Sedan', 'Bike', 'Bicyle', 'SUV', 'Wagon', 'Truck', 'others'],
             default: 'Sedan'
         },
-        
-        vehicle_type_if_others: String,
+
         vehicle_brand: { type: String, required: true },
         vehicle_model: { type: String, required: true },
         vehicle_engine_number: { type: String, required: true },
@@ -54,9 +50,9 @@ const vehicleSchema = newSchema(
             default: {}
         },
 
-        verified: { type: Date, default: false },
+        verified: { type: Date },
         company_owned: { type: Boolean, default: false },
-        added_by: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        added_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
         active: { type: Boolean, default: true },
         deleted_at: String
     },

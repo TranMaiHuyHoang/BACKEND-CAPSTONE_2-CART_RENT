@@ -1,14 +1,12 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-
-const vehicleLocationSchema = new Schema(
+const vehicleLocationSchema = new mongoose.Schema(
     {
         address: String,
         latitude: String,
         longitude: String,
         plus_code: String,
-        vehicle: { type: Schema.Types.ObjectId, ref: 'Vehicle', required: true },
+        vehicle: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle', required: true },
     },
 
     {

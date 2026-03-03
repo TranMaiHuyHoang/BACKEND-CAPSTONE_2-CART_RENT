@@ -1,8 +1,6 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-
-const vehicleHireSchema = new Schema(
+const vehicleHireSchema = new mongoose.Schema(
     {
         release: {
             date: String,
@@ -31,14 +29,14 @@ const vehicleHireSchema = new Schema(
             default: 'minutes'
         },
 
-        hiree: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        hirer: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        vehicle: { type: Schema.Types.ObjectId, ref: 'Vehicle', required: true },
-        booked_by: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        booking_updated_by: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        hiree: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        hirer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        vehicle: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle', required: true },
+        booked_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        booking_updated_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
         deleted_at: String
     },
-    
+
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
     }
