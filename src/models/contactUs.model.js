@@ -9,8 +9,6 @@ const contactUsSchema = new Schema(
         email: String,
         deleted_at: String
     },
-    {
-        timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
-    }
+    { timestamps: true }
 );
 module.exports = mongoose.model('ContactUs', contactUsSchema);

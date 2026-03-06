@@ -11,6 +11,35 @@ class VeHicleController {
             next(error);
         }
     }
+
+    async getListVehicles(req, res, next) {
+        try {
+            const result = await vehicleService.getListVehicles();
+            return res.status(201).json({ message: "Vehicle received successfully", data: result });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getVehicleById(req, res, next) {
+        try {
+            const vehicleId = req.params.vehicleId;
+            const result = await vehicleService.getVehicleById(vehicleId);
+            return res.status(201).json({ message: " Vehicle  received successfully", data: result });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async deleteVehicleById(req, res, next) {
+        try {
+            const vehicleId = req.params.vehicleId;
+            const result = await vehicleService.deleteVehicleById(vehicleId);
+            return res.status(201).json({ message: "Vehicle delete successfully", data: result });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new VeHicleController();

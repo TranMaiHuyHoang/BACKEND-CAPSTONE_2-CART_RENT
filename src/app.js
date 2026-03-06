@@ -4,6 +4,7 @@ const express = require('express');
 const authRoutes = require('./routes/auth.route');
 const uploadRoutes = require('./routes/upload.route');
 const vehicleRoutes = require('./routes/vehicle.route')
+const vehicleLocationRoutes = require('./routes/vehicleLocation.routes')
 // middleware for hand
 const errorHandler = require('./middlewares/errorHandler');
 
@@ -13,6 +14,8 @@ app.use(express.json());
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/vehicle_location', vehicleLocationRoutes);
 app.use(errorHandler);
+
 
 module.exports = app;

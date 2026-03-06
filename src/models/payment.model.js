@@ -24,9 +24,7 @@ const paymentSchema = new mongoose.Schema(
         paid_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
         deleted_at: String
     },
-    {
-        timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
-    }
+    { timestamps: true }
 );
 
 

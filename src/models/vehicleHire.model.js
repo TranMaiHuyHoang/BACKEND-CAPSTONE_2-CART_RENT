@@ -37,9 +37,7 @@ const vehicleHireSchema = new mongoose.Schema(
         deleted_at: String
     },
 
-    {
-        timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
-    }
+    { timestamps: true }
 );
 
 

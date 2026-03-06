@@ -8,10 +8,7 @@ const vehicleLocationSchema = new mongoose.Schema(
         plus_code: String,
         vehicle: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle', required: true },
     },
-
-    {
-        timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
-    }
+    { timestamps: true }
 );
 
 module.exports = mongoose.model('VehicleLocation', vehicleLocationSchema);

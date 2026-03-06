@@ -11,5 +11,12 @@ router.post('/create',
     vehicleController.createVehicle
 );
 
+router.get('/getListVehicles', vehicleController.getListVehicles);
+
+router.get('/getVehicleById/:vehicleId', vehicleController.getVehicleById);
+
+router.delete('/deleteVehicleById/:vehicleId', vehicleController.deleteVehicleById);
+
+
 module.exports = router;
 

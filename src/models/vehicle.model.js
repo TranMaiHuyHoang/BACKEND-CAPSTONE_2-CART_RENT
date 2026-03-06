@@ -56,9 +56,7 @@ const vehicleSchema = new mongoose.Schema(
         active: { type: Boolean, default: true },
         deleted_at: String
     },
-    {
-        timestamps: { createdAt: 'created_at', updateAt: 'updated_at' }
-    }
+    { timestamps: true }
 );
 
 
