@@ -14,8 +14,8 @@ class VeHicleController {
 
     async getListVehicles(req, res, next) {
         try {
-            const result = await vehicleService.getListVehicles();
-            return res.status(201).json({ message: "Vehicle received successfully", data: result });
+            const result = await vehicleService.getListVehicles(req.body);
+            return res.status(200).json({ message: "Vehicle received successfully", ...result });
         } catch (error) {
             next(error);
         }
