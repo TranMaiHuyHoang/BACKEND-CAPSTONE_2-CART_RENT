@@ -9,47 +9,41 @@ class VehicleService {
         return vehicleModel.create({ ...vehicle, added_by: userId });
     }
 
-    /**
-     * Build filter: search (regex trên SEARCH_FIELDS), vehicle_type, added_by.
-     */
-    _buildFilter(query) {
-        const { search, vehicle_type, added_by } = query;
+    async getListVehicles(body = {}) {
+        const { search, vehicle_type, added_by, sort_by, sort_by_price, page, limit } = body;
+
         const filter = {};
 
         if (search && String(search).trim()) {
             const regex = new RegExp(String(search).trim(), "i");
             filter.$or = SEARCH_FIELDS.map((field) => ({ [field]: regex }));
         }
-        if (vehicle_type) filter.vehicle_type = vehicle_type;
-        if (added_by) filter.added_by = added_by;
 
-        return filter;
-    }
+        if (vehicle_type) {
+            filter.vehicle_type = vehicle_type;
+        }
 
-    /**
-     * sort_by: -1 mới nhất, 1 cũ nhất (createdAt).
-     * sort_by_price: -1 cao→thấp, 1 thấp→cao.
-     * Ưu tiên sort_by_price làm sort chính nếu có.
-     */
-    _buildSort(query) {
-        const sortBy = BaseService.parseSortDirection(query.sort_by);
-        const sortByPrice = BaseService.parseSortDirection(query.sort_by_price);
+        if (added_by) {
+            filter.added_by = added_by;
+        }
 
-        if (sortByPrice !== null) {
-            return {
-                vehicle_hire_rate_in_figures: sortByPrice,
-                createdAt: sortBy !== null ? sortBy : -1,
+        const parsedSortBy = BaseService.parseSortDirection(sort_by);
+        const parsedSortByPrice = BaseService.parseSortDirection(sort_by_price);
+
+        let sort = {};
+
+        if (parsedSortByPrice !== null) {
+            sort = {
+                vehicle_hire_rate_in_figures: parsedSortByPrice,
+                createdAt: parsedSortBy !== null ? parsedSortBy : -1,
+            };
+        } else {
+            sort = {
+                createdAt: parsedSortBy !== null ? parsedSortBy : -1,
             };
         }
-        return {
-            createdAt: sortBy !== null ? sortBy : -1,
-        };
-    }
 
-    async getListVehicles(query = {}) {
-        const filter = this._buildFilter(query);
-        const sort = this._buildSort(query);
-        const pagination = BaseService.parsePagination(query);
+        const pagination = BaseService.parsePagination({ page, limit });
 
         return BaseService.findPaginated(vehicleModel, filter, sort, pagination);
     }
