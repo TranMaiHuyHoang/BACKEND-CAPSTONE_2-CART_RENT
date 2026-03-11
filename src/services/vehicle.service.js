@@ -26,11 +26,12 @@ class VehicleService {
         const parsedSortByPrice = BaseService.parseSortDirection(sort_by_price);
 
         const sort = {
-            ...(parsedSortByPrice !== null && {
-                vehicle_hire_rate_in_figures: parsedSortByPrice,
-            }),
             createdAt: parsedSortBy !== null ? parsedSortBy : -1,
         };
+
+        if (parsedSortByPrice !== null) {
+            sort.vehicle_hire_rate_in_figures = parsedSortByPrice;
+        }
 
         const pagination = BaseService.parsePagination({ page, limit });
 
