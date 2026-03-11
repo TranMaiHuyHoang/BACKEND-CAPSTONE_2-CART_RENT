@@ -15,33 +15,22 @@ class VehicleService {
         const filter = {};
 
         if (search && String(search).trim()) {
-            const regex = new RegExp(String(search).trim(), "i");
+            const regex = new RegExp(String(search).trim(), 'i');
             filter.$or = SEARCH_FIELDS.map((field) => ({ [field]: regex }));
         }
 
-        if (vehicle_type) {
-            filter.vehicle_type = vehicle_type;
-        }
-
-        if (added_by) {
-            filter.added_by = added_by;
-        }
+        if (vehicle_type) filter.vehicle_type = vehicle_type;
+        if (added_by) filter.added_by = added_by;
 
         const parsedSortBy = BaseService.parseSortDirection(sort_by);
         const parsedSortByPrice = BaseService.parseSortDirection(sort_by_price);
 
-        let sort = {};
-
-        if (parsedSortByPrice !== null) {
-            sort = {
+        const sort = {
+            ...(parsedSortByPrice !== null && {
                 vehicle_hire_rate_in_figures: parsedSortByPrice,
-                createdAt: parsedSortBy !== null ? parsedSortBy : -1,
-            };
-        } else {
-            sort = {
-                createdAt: parsedSortBy !== null ? parsedSortBy : -1,
-            };
-        }
+            }),
+            createdAt: parsedSortBy !== null ? parsedSortBy : -1,
+        };
 
         const pagination = BaseService.parsePagination({ page, limit });
 
