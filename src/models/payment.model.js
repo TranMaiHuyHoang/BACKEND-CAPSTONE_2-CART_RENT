@@ -2,30 +2,26 @@ const mongoose = require('mongoose');
 
 const paymentSchema = new mongoose.Schema(
     {
-        payment_initiated_on: Date,
+        booking_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking', required: true },
+        amount: { type: Number, required: true },
         payment_method: {
             type: String,
             required: true,
-            enum: ['Debit/Credit Card', 'Paypal', 'Bitcoin', 'Ethereum'],
+            enum: ['Debit/Credit Card', 'Paypal', 'Bank Transfer', 'Cash', 'Bitcoin', 'Ethereum'],
             default: 'Debit/Credit Card'
         },
-
-        status: {
+        payment_status: {
             type: String,
             required: true,
-            enum: ['Declined', 'Pending', 'Successful'],
-            default: 'Pending'
+            enum: ['pending', 'declined', 'successful', 'failed'],
+            default: 'pending'
         },
-
-        hiree: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-        hirer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-        vehicle: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle', required: true },
-        vehicle_hire: { type: mongoose.Schema.Types.ObjectId, ref: 'VehicleHire', required: true },
-        paid_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        transaction_code: { type: String, trim: true },
+        paid_at: { type: Date },
+        paid_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         deleted_at: String
     },
     { timestamps: true }
 );
-
 
 module.exports = mongoose.model('Payment', paymentSchema);
