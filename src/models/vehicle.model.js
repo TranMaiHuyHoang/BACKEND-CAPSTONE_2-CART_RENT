@@ -47,8 +47,7 @@ const vehicleSchema = new mongoose.Schema(
         verified: { type: Date },
         company_owned: { type: Boolean, default: false },
         added_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-        active: { type: Boolean, default: true },
-        deleted_at: String
+        active: { type: Boolean, default: true }
     },
     { timestamps: true }
 );

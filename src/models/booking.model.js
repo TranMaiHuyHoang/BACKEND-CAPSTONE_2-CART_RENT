@@ -25,8 +25,7 @@ const bookingSchema = new mongoose.Schema(
             ],
             default: 'pending'
         },
-        note: { type: String, default: '' },
-        deleted_at: { type: String }
+        note: { type: String, default: '' }
     },
     { timestamps: true }
 );

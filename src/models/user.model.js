@@ -27,6 +27,11 @@ const userSchema = new mongoose.Schema(
             default: "user"
         },
 
+        is_active: {
+            type: Boolean,
+            default: true
+        },
+
         age: {
             type: Number,
         },
