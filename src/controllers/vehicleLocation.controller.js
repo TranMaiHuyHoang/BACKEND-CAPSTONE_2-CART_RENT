@@ -22,6 +22,17 @@ class VehicleLocationController {
             next(error);
         }
     }
+
+    async updateCurrentLocation(req, res, next) {
+        try {
+            const vehicleId = req.params.vehicleId;
+            const showroomId = req.user.userId;
+            const result = await vehicleLocationService.updateCurrentLocation(vehicleId, showroomId, req.body);
+            return res.status(200).json({ message: "Vehicle location updated successfully", data: result });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new VehicleLocationController();
