@@ -5,6 +5,9 @@ const uploadController = require("../controllers/upload.controller");
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.post("/image/files", upload.array("files", 5), uploadController.uploadImageFiles);
+router.post("/image/files",
+    upload.array("files", 5),
+    uploadController.uploadImageFiles
+);
 
 module.exports = router;

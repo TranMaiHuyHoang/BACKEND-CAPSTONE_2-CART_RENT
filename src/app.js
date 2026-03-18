@@ -3,8 +3,9 @@ var morgan = require('morgan');
 // import routes
 const authRoutes = require('./routes/auth.route');
 const uploadRoutes = require('./routes/upload.route');
-const vehicleRoutes = require('./routes/vehicle.route')
-const vehicleLocationRoutes = require('./routes/vehicleLocation.routes')
+const vehicleRoutes = require('./routes/vehicle.route');
+const vehicleLocationRoutes = require('./routes/vehicleLocation.routes');
+const reviewRoutes = require('./routes/review.route');
 // middleware for hand
 const errorHandler = require('./middlewares/errorHandler');
 
@@ -16,6 +17,7 @@ app.use('/api/uploads', uploadRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/vehicle_location', vehicleLocationRoutes);
+app.use('/api/reviews', reviewRoutes);
 app.use(errorHandler);
 
 

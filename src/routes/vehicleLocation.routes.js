@@ -5,11 +5,19 @@ const authorizeRoles = require("../middlewares/authorize.middleware");
 const vehicleLocationValidation = require("../validations/vehicleLocation.validation");
 const validate = require("../middlewares/validate.middleware");
 const router = express.Router();
+
+
 router.use(authMiddleware);
+// router.use(authorizeRoles("showroom"));
 
-router.post('/createVehicleLocation/:vehicleId', authMiddleware, vehicleLocationController.createVehicleLocation);
 
-router.get('/getVehicleLocationByVehicleId/:vehicleId', authMiddleware, vehicleLocationController.getVehicleLocationByVehicleId);
+router.post('/createVehicleLocation/:vehicleId',
+    vehicleLocationController.createVehicleLocation
+);
+
+router.get('/getVehicleLocationByVehicleId/:vehicleId',
+    vehicleLocationController.getVehicleLocationByVehicleId
+);
 
 router.put(
     "/vehicle/:vehicleId",
