@@ -11,7 +11,11 @@ router.post('/create',
     vehicleController.createVehicle
 );
 
-router.post('/getListVehicles', vehicleValidation.getListVehicles, validate, vehicleController.getListVehicles);
+router.post('/getListVehicles',
+    vehicleValidation.getListVehicles,
+    validate,
+    vehicleController.getListVehicles
+);
 
 router.get('/getVehicleById/:vehicleId',
     vehicleValidation.getVehicleById,
