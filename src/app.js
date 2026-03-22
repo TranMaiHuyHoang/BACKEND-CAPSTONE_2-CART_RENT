@@ -6,6 +6,7 @@ const uploadRoutes = require('./routes/upload.route');
 const vehicleRoutes = require('./routes/vehicle.route')
 const vehicleLocationRoutes = require('./routes/vehicleLocation.routes')
 const contactUsRoutes = require('./routes/contactUs.route')
+const bookingRoutes = require('./routes/booking.route')
 // middleware for hand
 const errorHandler = require('./middlewares/errorHandler');
 
@@ -18,6 +19,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/vehicle_location', vehicleLocationRoutes);
 app.use('/api/contact_us', contactUsRoutes);
+app.use('/api/booking/', bookingRoutes)
 app.use(errorHandler);
 
 
