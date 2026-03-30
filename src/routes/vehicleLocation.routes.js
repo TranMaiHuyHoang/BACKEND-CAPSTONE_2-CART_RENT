@@ -11,11 +11,17 @@ router.use(authMiddleware);
 // router.use(authorizeRoles("showroom"));
 
 
-router.post('/createVehicleLocation/:vehicleId',
+router.post(
+    '/createVehicleLocation/:vehicleId',
+    vehicleLocationValidation.createVehicleLocation,
+    validate,
     vehicleLocationController.createVehicleLocation
 );
 
-router.get('/getVehicleLocationByVehicleId/:vehicleId',
+router.get(
+    '/getVehicleLocationByVehicleId/:vehicleId',
+    vehicleLocationValidation.getVehicleLocationByVehicleId,
+    validate,
     vehicleLocationController.getVehicleLocationByVehicleId
 );
 

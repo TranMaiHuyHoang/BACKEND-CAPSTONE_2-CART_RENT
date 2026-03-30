@@ -8,7 +8,7 @@ class VehicleLocationService {
     }
 
     async getVehicleLocationByVehicleId(vehicleId) {
-        return vehicleLocationModel.findById({ vehicle: vehicleId });
+        return vehicleLocationModel.findOne({ vehicle: vehicleId });
     }
 
     async updateCurrentLocation(vehicleId, showroomId, body) {
