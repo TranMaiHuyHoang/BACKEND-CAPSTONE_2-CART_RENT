@@ -1,6 +1,16 @@
 const { body, param } = require("express-validator");
 
-const BOOKING_STATUSES = ["pending", "confirmed", "cancelled", "completed"];
+const BOOKING_STATUSES = ['pending',
+  'confirmed',
+  'cancelled',
+  'completed',
+  'waiting_payment',
+  'paid',
+  'waiting_handover',
+  'handed_over',
+  'in_use',
+  'waiting_return_confirmation'
+];
 
 class BookingValidation {
   createBooking = [
@@ -69,13 +79,13 @@ class BookingValidation {
   ];
 
   getBookingById = [
-    param("id")
+    param("bookingId")
       .notEmpty().withMessage("Không được để trống")
       .isMongoId().withMessage("Phải là MongoId hợp lệ"),
   ];
 
   updateBookingStatus = [
-    param("id")
+    param("bookingId")
       .notEmpty().withMessage("Không được để trống")
       .isMongoId().withMessage("Phải là MongoId hợp lệ"),
 
@@ -86,7 +96,7 @@ class BookingValidation {
   ];
 
   deleteBooking = [
-    param("id")
+    param("bookingId")
       .notEmpty().withMessage("Không được để trống")
       .isMongoId().withMessage("Phải là MongoId hợp lệ"),
   ];

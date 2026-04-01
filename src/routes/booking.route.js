@@ -5,12 +5,18 @@ const bookingController = require("../controllers/booking.controller");
 const authMiddleware = require("../middlewares/auth.middleware");
 const validate = require("../middlewares/validate.middleware");
 const bookingValidation = require("../validations/booking.validation");
+const PaymentController = require("../controllers/payment.controller");
 
-router.post("/", authMiddleware, bookingValidation.createBooking, validate, bookingController.createBooking);
-router.get("/", authMiddleware, bookingValidation.getAllBookings, validate, bookingController.getAllBookings);
-router.get("/:id", authMiddleware, bookingValidation.getBookingById, validate, bookingController.getBookingById);
-router.patch("/:id/status", authMiddleware, bookingValidation.updateBookingStatus, validate, bookingController.updateBookingStatus);
-router.delete("/:id", authMiddleware, bookingValidation.deleteBooking, validate, bookingController.deleteBooking);
+router.post(
+  '/:bookingId/createPayment',
+  PaymentController.createPaymentForBooking
+);
+
+router.post("/createBooking", authMiddleware, bookingValidation.createBooking, validate, bookingController.createBooking);
+router.post("/getListBookings", authMiddleware, bookingValidation.getAllBookings, validate, bookingController.getAllBookings);
+router.get("/getBooking/:bookingId", authMiddleware, bookingValidation.getBookingById, validate, bookingController.getBookingById);
+router.patch("/updateBookingStatus/:bookingId", authMiddleware, bookingValidation.updateBookingStatus, validate, bookingController.updateBookingStatus);
+router.delete("/deleteBooking/:bookingId", authMiddleware, bookingValidation.deleteBooking, validate, bookingController.deleteBooking);
 
 
 module.exports = router;

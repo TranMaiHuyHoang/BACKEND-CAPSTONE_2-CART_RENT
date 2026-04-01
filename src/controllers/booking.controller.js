@@ -17,7 +17,7 @@ class BookingController {
 
   async getAllBookings(req, res, next) {
     try {
-        const filters = req.query;
+        const filters = req.body;
         const result = await bookingService.getAllBookings(filters);
 
         return res.status(200).json({
@@ -32,8 +32,8 @@ class BookingController {
 
   async getBookingById(req, res, next) {
     try {
-      const { id } = req.params;
-      const result = await bookingService.getBookingById(id);
+      const { bookingId } = req.params;
+      const result = await bookingService.getBookingById(bookingId);
       if (!result) {
         return res.status(404).json({
           message: "Không tìm thấy đặt chỗ",
@@ -50,14 +50,14 @@ class BookingController {
 
   async updateBookingStatus(req, res, next) {
     try {
-      const { id } = req.params;
+      const { bookingId } = req.params;
       const { status } = req.body;
       if (!status) {
         return res.status(400).json({
           message: "Trạng thái không được để trống",
         });
       }
-      const result = await bookingService.updateBookingStatus(id, status);
+      const result = await bookingService.updateBookingStatus(bookingId, status);
       if (!result) {
         return res.status(404).json({
           message: "Không tìm thấy đặt chỗ để cập nhật",
@@ -75,8 +75,8 @@ class BookingController {
 
   async deleteBooking(req, res, next) {
     try {
-      const { id } = req.params;
-      const result = await bookingService.deleteBooking(id);
+      const { bookingId } = req.params;
+      const result = await bookingService.deleteBooking(bookingId);
       if (!result) {
         return res.status(404).json({
           message: "Không tìm thấy đặt chỗ để xóa",

@@ -53,15 +53,16 @@ class BookingService {
     return booking.save();
   }
 
-  static async getAllBookings(query) {
-    const { search, status, user_id, showroom_id, sort_by, sort_by_price, page, limit, min_price, max_price, } = query;
+  static async getAllBookings(body = {}) {
+    const { search, status, user_id, showroom_id, sort_by, sort_by_price, page, limit, min_price, max_price, } = body;
 
     const pagination = BaseService.parsePagination({ page, limit });
 
-    const searchFilter = BookingQueryBuilder.buildSearchFilter(search, ['note', 'status']);
+    const searchFilter = BookingQueryBuilder.buildSearchFilter(search, ['note']);
     const fieldFilter = BookingQueryBuilder.buildFieldFilter({ status, user_id, showroom_id, min_price, max_price });
 
-    const filter = { ...searchFilter, ...fieldFilter };
+    // const filter = { ...searchFilter, ...fieldFilter };
+    const filter = { $and: [searchFilter, fieldFilter] };
     const sort = BookingQueryBuilder.buildSort({ sort_by, sort_by_price });
 
     // Find paginated
@@ -82,9 +83,8 @@ class BookingService {
 
     const validStatuses = Booking.schema.path('status').enumValues;
 
-    
-    if (!validStatuses.includes(status)) {
-      throwError(`Trạng thái "${status}" không hợp lệ`);
+    if (!validStatuses || !validStatuses.includes(status)) {
+      throw new Error(`Trạng thái "${status}" không hợp lệ`);
     }
     // dùng log để audit hoặc giải quyết tranh chấp nếu cần
 
