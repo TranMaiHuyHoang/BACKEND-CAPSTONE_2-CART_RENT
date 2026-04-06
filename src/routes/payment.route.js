@@ -2,11 +2,12 @@
 const express = require("express");
 const router = express.Router();
 const paymentController = require("../controllers/payment.controller");
-
+const authMiddleware = require("../middlewares/auth.middleware");
 router.post('/createPaymentDB', paymentController.createPaymentDB);
 router.get('/getPaymentIntent/:intentId', paymentController.getPaymentIntentById);
 router.get("/getPaymentById/:paymentId",paymentController.getPaymentDBById);
-router.post("/webhook",express.raw({ type: "application/json" }), paymentController.handleWebhook);
+router.post("/getListPayments", paymentController.getListPaymentDB);
+router.post('/sync-intent', authMiddleware, paymentController.syncPaymentIntentWithDB);
 
 
 

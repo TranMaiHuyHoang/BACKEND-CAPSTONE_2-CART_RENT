@@ -38,18 +38,18 @@ class PaymentController {
         return res.status(404).json({ error: "Không tìm thấy dữ liệu thanh toán" });
       }
 
-      return res.status(200).json({message: "Lấy dữ liệu thanh toán thành công", data: payment});
+      return res.status(200).json({ message: "Lấy dữ liệu thanh toán thành công", data: payment });
     } catch (err) {
       next(err);
     }
   }
 
-  
+
 
   async getPaymentIntentById(req, res, next) {
     try {
       const { intentId } = req.params;
-      const paymentIntent = await paymentService.getPaymentIntentById(intentId );
+      const paymentIntent = await paymentService.getPaymentIntentById(intentId);
 
 
       if (!paymentIntent) {
@@ -69,27 +69,43 @@ class PaymentController {
       next(error);
     }
   }
-  async handleWebhook(req, res) {
-    const sig = req.headers["stripe-signature"];
-    let event;
+
+  async getListPaymentDB(req, res, next) {
+    try {
+      const payments = await paymentService.getListPaymentDB(req.body);
+      res.status(200).json({
+        message: "Lấy danh sách thanh toán thành công",
+        data: payments
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+  async syncPaymentIntentWithDB(req, res, next) {
+    const { paymentIntentId } = req.body;
+    const user = req.user; // middleware auth gắn user vào req
+
+    if (!paymentIntentId) {
+      return res.status(400).json({ error: 'Thiếu paymentIntentId' });
+    }
 
     try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET
-      );
-    } catch (err) {
-      console.error("Webhook signature verification failed:", err.message);
-      return res.sendStatus(400);
+
+      const result = await paymentService.syncPaymentIntentWithDB(paymentIntentId);
+
+      return res.status(200).json({
+        message: 'Đồng bộ trạng thái thanh toán thành công',
+        data: {
+          intentId: result.intent.id,
+          intentStatus: result.intent.status,
+          paymentId: result.payment._id,
+          bookingId: result.booking._id,
+        }
+      });
+    } catch (error) {
+      next(error);
     }
-    
-    // Gọi service để xử lý event
-    await paymentService.processEvent(event);
-
-    res.sendStatus(200);
-  }
-
+  };
 }
 
 module.exports = new PaymentController();

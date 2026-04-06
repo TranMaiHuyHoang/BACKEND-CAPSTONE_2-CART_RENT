@@ -3,25 +3,19 @@ const BaseService = require('./base.service');
 const throwError = require('../utils/throwError');
 
 
-class BookingQueryBuilder {
-  static buildFieldFilter({ status, user_id, showroom_id, min_price, max_price }) {
-    const filter = {};
+class QueryBuilder  {
+  static buildExactFieldFilter(filters = {}) {
+  const filter = {};
 
-    // Exact match filters
-    const exactFields = { status, user_id, showroom_id };
-    for (const [key, value] of Object.entries(exactFields)) {
-      if (value) filter[key] = value;
+  // Exact match filters: chỉ lấy những field có giá trị cụ thể
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined && value !== null && value !== '') {
+      filter[key] = value;
     }
-
-    // Range filters
-    if (min_price || max_price) {
-      filter.total_price = {};
-      if (min_price) filter.total_price.$gte = Number(min_price);
-      if (max_price) filter.total_price.$lte = Number(max_price);
-    }
-
-    return filter;
   }
+
+  return filter;
+}
 
   static buildSearchFilter(search, fields = []) {
     if (search && String(search).trim()) {
@@ -33,16 +27,20 @@ class BookingQueryBuilder {
     return {};
   }
 
-  static buildSort({ sort_by, sort_by_price }) {
-    const sort = {
-      createdAt: BaseService.parseSortDirection(sort_by) ?? -1,
-    };
+  static buildSortOptions(sorts = []) {
+    const sort = {};
 
-    const totalPriceSort = BaseService.parseSortDirection(sort_by_price);
-    if (totalPriceSort !== null) sort.total_price = totalPriceSort;
+    // thêm các field khác
+    for (const { field, value } of sorts) {
+      const direction = BaseService.parseSortDirection(value);
+      if (direction !== null) {
+        sort[field] = direction;
+      }
+    }
 
     return sort;
   }
+
 }
 
 
@@ -54,27 +52,28 @@ class BookingService {
   }
 
   static async getAllBookings(body = {}) {
-    const { search, status, user_id, showroom_id, sort_by, sort_by_price, page, limit, min_price, max_price, } = body;
+    const { search, status, user_id, showroom_id, sort_by, sort_by_price, page, limit } = body;
 
     const pagination = BaseService.parsePagination({ page, limit });
 
-    const searchFilter = BookingQueryBuilder.buildSearchFilter(search, ['note']);
-    const fieldFilter = BookingQueryBuilder.buildFieldFilter({ status, user_id, showroom_id, min_price, max_price });
+    const searchFilter = QueryBuilder.buildSearchFilter(search, ['note']);
+    const fieldFilter = QueryBuilder.buildExactFieldFilter({ status, user_id, showroom_id });
 
     // const filter = { ...searchFilter, ...fieldFilter };
     const filter = { $and: [searchFilter, fieldFilter] };
-    const sort = BookingQueryBuilder.buildSort({ sort_by, sort_by_price });
+    const sortOptions = QueryBuilder.buildSortOptions([
+      { field: 'total_price', value: sort_by_price },
+      { field: 'createdAt', value: sort_by }
+    ]);
+
 
     // Find paginated
-    return BaseService.findPaginated(Booking, filter, sort, pagination);
+    return BaseService.findPaginated(Booking, filter, sortOptions, pagination);
   }
 
   static async getBookingById(id) {
     return Booking.findById(id)
-      .populate('user_id')
-      .populate('vehicle_id')
-      .populate('showroom_id')
-      .lean();
+
   }
 
   static async updateBookingStatus(id, status) {

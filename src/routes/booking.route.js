@@ -14,7 +14,7 @@ router.post(
 
 router.post("/createBooking", authMiddleware, bookingValidation.createBooking, validate, bookingController.createBooking);
 router.post("/getListBookings", authMiddleware, bookingValidation.getAllBookings, validate, bookingController.getAllBookings);
-router.get("/getBooking/:bookingId", authMiddleware, bookingValidation.getBookingById, validate, bookingController.getBookingById);
+router.get("/getBookingById/:bookingId", authMiddleware, bookingValidation.getBookingById, validate, bookingController.getBookingById);
 router.patch("/updateBookingStatus/:bookingId", authMiddleware, bookingValidation.updateBookingStatus, validate, bookingController.updateBookingStatus);
 router.delete("/deleteBooking/:bookingId", authMiddleware, bookingValidation.deleteBooking, validate, bookingController.deleteBooking);
 
