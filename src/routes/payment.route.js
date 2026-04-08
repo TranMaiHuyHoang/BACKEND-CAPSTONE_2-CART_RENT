@@ -7,6 +7,7 @@ router.post('/createPaymentDB', paymentController.createPaymentDB);
 router.get('/getPaymentIntent/:intentId', paymentController.getPaymentIntentById);
 router.get("/getPaymentById/:paymentId",paymentController.getPaymentDBById);
 router.post("/getListPayments", paymentController.getListPaymentDB);
+router.get("/getPaymentState/:bookingId", paymentController.getPaymentState);
 router.post('/sync-intent', authMiddleware, paymentController.syncPaymentIntentWithDB);
 
 

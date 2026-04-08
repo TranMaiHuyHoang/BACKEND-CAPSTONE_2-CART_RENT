@@ -8,13 +8,87 @@ const stripe = Stripe("pk_test_51TDoRKBn9AulH7lmRgTPg6jtA8YsMjQHm1xk0NrTQimgIVsd
 
 
 
-// Lấy bookingId từ query string khi vào checkout.html
-const bookingId = new URLSearchParams(window.location.search).get("bookingId");
-initPaymentFlow(bookingId);
+
+
+window.addEventListener("DOMContentLoaded", () => {
+  initPaymentFlow(localStorage.getItem("bookingId"));
+});
 
 
 
 
+//Render UI
+
+
+function renderUI(booking, clientSecret) {
+  renderBookingDetail(booking);
+  // Nếu có clientSecret thì khởi tạo và mount payment UI
+  if (clientSecret) {
+    const appearance = { theme: 'stripe' };
+    const elements = stripe.elements({
+      locale: 'vi',
+      appearance,
+      clientSecret
+    });
+
+  mountPaymentElement(elements);
+  attachSubmitHandler(elements);
+}
+}
+
+function renderBookingDetail(booking) {
+  const detailEl = document.getElementById("booking-detail");
+  detailEl.innerHTML = `
+    <li><strong>Model Xe thuê:</strong> ${booking.vehicle.vehicle_model}</li>
+
+    <li><strong>Tổng cộng:</strong> ${booking.total_price}₫</li>
+  `;
+}
+
+function attachSubmitHandler(elements) {
+  const form = document.querySelector("#payment-form");
+  if (!form) {
+    console.error("Không tìm thấy #payment-form trong DOM");
+    return;
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault(); // chặn reload
+    handleSubmit(e, elements);
+  });
+}
+
+function mountPaymentElement(elements, selector = '#payment-element') {
+  const paymentElement = elements.create('payment', { layout: 'accordion' });
+  paymentElement.mount(selector);
+}
+
+///
+
+/// Data layer
+async function createPaymentForBooking(bookingId) {
+  // 1. Lấy trạng thái checkout hiện tại
+  const data = await api.get(`/payment/getPaymentState/${bookingId}`, {
+    headers: { "Cache-Control": "no-cache" }
+  });
+  console.log("payment status:", data.paymentStatus, "booking status:", data.bookingStatus);
+  if (data.bookingStatus === "paid" && data.paymentStatus === "successful") {
+    return {
+      error: "Booking đã được thanh toán trước đó. Không thể thanh toán lại.",
+      clientSecret: null
+    };
+
+  }
+
+  const res = await api.post(`/booking/${bookingId}/createPayment/`);
+  console.log("Create Payment:", res);
+
+  return {
+    error: null,
+    clientSecret: res?.client_secret || null
+  };
+
+}
 
 // Hàm lấy chi tiết booking kèm theo user, vehicle, showroom
 async function getBookingWithDetails(bookingId) {
@@ -22,21 +96,16 @@ async function getBookingWithDetails(bookingId) {
     // Lấy booking gốc
     const bookingRes = await api.get(`/booking/getBookingById/${bookingId}`, {
   headers: { "Cache-Control": "no-cache" }
-});
+  });
+
     const booking = bookingRes;
-    console.log("booking:", booking);
-    console.log("booking.vehicle_id:", booking.vehicle_id);
-    // Nếu backend không populate, gọi thêm các API liên quan
     const [ vehicleRes] = await Promise.all([
       // api.get(`/users/${booking.user_id}`), //hiện chưa có api này, nếu có thì gọi để lấy thông tin user
       api.get(`/vehicles/getVehicleById/${booking.vehicle_id}`, {
         headers: { "Cache-Control": "no-cache" }
       }),
-    //   api.get(`/showrooms/${booking.showroom_id}`) //hiện chưa có api này, nếu có thì gọi để lấy thông tin showroom
     ]);
-    console.log("vehicle:", vehicleRes);
 
-    // Gộp dữ liệu lại
     return {
       ...booking,
       vehicle: vehicleRes,
@@ -47,69 +116,34 @@ async function getBookingWithDetails(bookingId) {
   }
 }
 
-function renderBookingDetail(booking) {
-  const detailEl = document.getElementById("booking-detail");
-  detailEl.innerHTML = `
-    <li><strong>Xe thuê:</strong> ${booking.vehicle.vehicle_model}</li>
-    <li><strong>Tổng cộng:</strong> ${booking.total_price}₫</li>
-  `;
-}
 
-async function createPaymentForBooking(bookingId) {
-    const booking = await getBookingWithDetails(bookingId);
+///
 
-  // render detail
-  renderBookingDetail(booking);
 
-  const res = await api.post(`/booking/${bookingId}/createPayment/`);
-  console.log("Create Payment:", res);
 
-  if (res?.client_secret) {
-    const appearance = { theme: 'stripe' };
-    const elements = stripe.elements({ locale: 'vi',appearance, clientSecret: res.client_secret });
-    return elements;
-  }
-  return null;
-}
 
-function mountPaymentElement(elements, selector = '#payment-element') {
-  const paymentElement = elements.create('payment', { layout: 'accordion' });
-  paymentElement.mount(selector);
-}
-
-function attachSubmitHandler(elements) {
-  const form = document.querySelector("#payment-form");
-  if (!form) {
-    console.error("Không tìm thấy #payment-form trong DOM");
-    return;
-  }
-
-  form.addEventListener("submit", (e) => handleSubmit(e, elements));
-}
 
 async function initPaymentFlow(bookingId) {
   try {
     if (!bookingId) {
-      alert("Không có bookingId");
+      throw new Error("Không tìm thấy bookingId");
+    }
+    console.log("Khởi tạo Payment Flow cho bookingId:", bookingId);
+
+    const booking = await getBookingWithDetails(bookingId);
+    const { error, clientSecret } = await createPaymentForBooking(bookingId);
+    if (error) {
+      // Hiển thị lỗi (tạm thời dùng alert)
+      alert(error);
+      // Hoặc log ra console (cho dev)
+      console.error(error);
       return;
     }
 
-    const elements = await createPaymentForBooking(bookingId);
-    if (!elements) {
-      console.error("Không tạo được Payment Element");
-      return;
-    }
-    mountPaymentElement(elements);
-
-    const form = document.querySelector("#payment-form");
-    if (!form) {
-      console.error("Không tìm thấy #payment-form trong DOM");
-      return;
-    }
-
-    attachSubmitHandler(elements);
+    renderUI(booking, clientSecret);
   } catch (err) {
     console.error("Lỗi khi khởi tạo Payment Flow:", err);
+    alert(err.message);
   }
 }
 

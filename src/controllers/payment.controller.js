@@ -81,31 +81,49 @@ class PaymentController {
       next(err);
     }
   }
-  async syncPaymentIntentWithDB(req, res, next) {
-    const { paymentIntentId } = req.body;
-    const user = req.user; // middleware auth gắn user vào req
 
-    if (!paymentIntentId) {
-      return res.status(400).json({ error: 'Thiếu paymentIntentId' });
-    }
-
+  async getPaymentState(req, res, next) {
     try {
+      const { bookingId } = req.params;
 
-      const result = await paymentService.syncPaymentIntentWithDB(paymentIntentId);
+      const state = await paymentService.getPaymentState(bookingId);
 
       return res.status(200).json({
-        message: 'Đồng bộ trạng thái thanh toán thành công',
-        data: {
-          intentId: result.intent.id,
-          intentStatus: result.intent.status,
-          paymentId: result.payment._id,
-          bookingId: result.booking._id,
+        message: "Lấy trạng thái thanh toán thành công",
+        data: state
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /** Cập nhật trạng thái của payment db và booking db, trả về intent id và intent status cho frontend xử lý */
+  async syncPaymentIntentWithDB(req, res, next) {
+    try {
+      const { paymentIntentId } = req.body;
+
+      const { intent, paymentStatus, bookingStatus } = await paymentService.syncPaymentIntentWithDB(paymentIntentId);
+
+      // dựng message ngắn gọn
+      const statusMessage =
+        paymentStatus === 'successful'
+          ? `Thanh toán ${intent.amount} ${intent.currency} thành công!`
+          : paymentStatus === 'failed'
+            ? `Thanh toán ${intent.amount} ${intent.currency} thất bại hoặc bị hủy!`
+            : `Intent đang ở trạng thái: ${intent.status}`;
+
+      return res.status(200).json({
+        message: statusMessage,
+        data: { 
+          intentId: intent.id, 
+          intentStatus: intent.status, 
+          paymentStatus, bookingStatus 
         }
       });
     } catch (error) {
       next(error);
     }
-  };
+  }
 }
 
 module.exports = new PaymentController();

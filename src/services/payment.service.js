@@ -65,6 +65,10 @@ class PaymentService {
     const booking = await BookingService.getBookingById(bookingId);
     if (!booking) throwError('Không tìm thấy booking', 404);
 
+    if (booking.status === "paid") {
+      throwError("Booking đã thanh toán", 400);
+    }
+
     // Kiểm tra có được phép thanh toán không
     if (!ALLOWED_PAYMENT_STATUSES.includes(booking.status)) {
       throwError(
@@ -72,14 +76,16 @@ class PaymentService {
     Chỉ các trạng thái được phép: ${ALLOWED_PAYMENT_STATUSES.join(', ')}`,
         400
       );
-
     }
-
     // Tìm payment cũ
     let payment = await PaymentModel.findOne({
       booking_id: bookingId,
       payment_status: 'pending'
-    }).lean();
+    })
+
+    if (payment.payment_status !== "pending") {
+      throw throwError('Chỉ có thanh toán pending mới được tạo intent', 400);
+    }
 
     // Nếu chưa có thì tạo mới
     if (!payment) {
@@ -95,9 +101,6 @@ class PaymentService {
 
     }
 
-    if (payment.payment_status !== "pending") {
-      throw throwError('Chỉ có thanh toán pending mới được tạo intent', 400);
-    }
 
     let intent;
     // Nếu đã có intent → dùng lại
@@ -119,6 +122,29 @@ class PaymentService {
     return { ...payment, stripe_payment_intent_id: intent.id, client_secret: intent.client_secret };
   }
 
+  async getPaymentState(bookingId) {
+    const booking = await BookingService.getBookingById(bookingId);
+    if (!booking) throwError("Không tìm thấy booking", 404);
+
+    const payment = await PaymentModel.findOne({
+      booking_id: bookingId,
+    }).sort({ createdAt: -1 });
+
+
+    let intent = null;
+
+    if (payment?.stripe_payment_intent_id) {
+      intent = await this.getPaymentIntentById(
+        payment.stripe_payment_intent_id
+      );
+    }
+
+    return {
+      bookingStatus: booking.status,
+      paymentStatus: payment?.payment_status || null,
+      intentStatus: intent?.status || null,
+    };
+  }
 
   async createPaymentIntent(body = {}) {
     const { paymentId } = body;
@@ -207,52 +233,46 @@ class PaymentService {
     await payment.save();
     return payment.toObject();
   }
+  /** cập nhật trạng thái thanh toán db và booking db, trả về object result cho controller xử lý lấy field cụ thể */
   async syncPaymentIntentWithDB(paymentIntentId) {
     const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-    let payment, booking;
-
-    const updatePaymentAndBooking = async (intent, paymentStatus, bookingStatus, logMessageFn) => {
+    const updatePaymentAndBooking = async (intent, paymentStatus, bookingStatus) => {
       const paymentId = intent.metadata.payment_id;
       const bookingId = intent.metadata.booking_id;
 
-      payment = await this.getPaymentDBById(paymentId);
+      const payment = await this.getPaymentDBById(paymentId);
       await this.updatePaymentDBStatus(paymentId, paymentStatus);
-      booking = await BookingService.updateBookingStatus(bookingId, bookingStatus);
+      await BookingService.updateBookingStatus(bookingId, bookingStatus);
 
       if (paymentStatus === 'successful') {
         await PaymentModel.findByIdAndUpdate(payment._id, { paid_at: new Date() });
       }
-
-      console.log(logMessageFn(intent));
     };
 
-    switch (intent.status) {
-      case "succeeded":
-        await updatePaymentAndBooking(
-          intent,
-          'successful',
-          'paid',
-          (i) => `Thanh toán ${i.amount} ${i.currency} thành công!`
-        );
-        break;
+    // Gom logic xác định trạng thái
+    let paymentStatus = null;
+    let bookingStatus = null;
 
-      case "requires_payment_method":
-      case "canceled":
-        await updatePaymentAndBooking(
-          intent,
-          'failed',
-          'waiting_payment',
-          (i) => `Thanh toán ${i.amount} ${i.currency} thất bại hoặc bị hủy!`
-        );
-        break;
-
-      default:
-        console.log(`Unhandled intent status ${intent.status}`);
+    if (intent.status === "succeeded") {
+      paymentStatus = 'successful';
+      bookingStatus = 'paid';
+    } else if (["requires_payment_method", "canceled"].includes(intent.status)) {
+      paymentStatus = 'failed';
+      bookingStatus = 'waiting_payment';
     }
 
-    // Trả về object result cho controller
-    return { payment, booking, intent };
+    // Nếu có trạng thái thì update DB
+    if (paymentStatus && bookingStatus) {
+      await updatePaymentAndBooking(intent, paymentStatus, bookingStatus);
+    }
+
+    // Trả về object thống nhất
+    return {
+      intent,
+      paymentStatus,
+      bookingStatus,
+    };
   }
 }
 

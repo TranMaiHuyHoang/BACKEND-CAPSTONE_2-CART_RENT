@@ -22,34 +22,38 @@ const InfoIcon =
 const stripe = Stripe("pk_test_51TDoRKBn9AulH7lmRgTPg6jtA8YsMjQHm1xk0NrTQimgIVsdP1EMxYk58cLk4jAqr8FSMp1NEiCe2Iorr4Q6lHkB00mFsmVUMM");
 
 // ------- UI helpers -------
-function setPaymentDetails(intentStatus, intentId) {
-  let statusText = "Something went wrong, please try again.";
-  let iconColor = "#DF1B41";
-  let icon = ErrorIcon;
-
-
+function setPaymentDetails(intentStatus, intentId, message) {
+ 
   console.log("Payment Intent status:", intentStatus);
+
+  // Gán iconColor, icon và statusText dựa trên intentStatus
   switch (intentStatus) {
     case "succeeded":
-      statusText = "Payment succeeded";
       iconColor = "#30B130";
       icon = SuccessIcon;
+      statusText = message || "Thanh toán thành công";
       break;
     case "processing":
-      statusText = "Your payment is processing.";
       iconColor = "#6D6E78";
       icon = InfoIcon;
+      statusText = message || "Đang xử lý thanh toán của bạn.";
       break;
     case "requires_payment_method":
-      statusText = "Your payment was not successful, please try again.";
+      iconColor = "#DF1B41";
+      icon = ErrorIcon;
+      statusText = message || "Thanh toán không thành công, vui lòng thử lại.";
       break;
     default:
+      iconColor = "#DF1B41";
+      icon = ErrorIcon;
+      statusText = message || "Đã xảy ra lỗi, vui lòng thử lại.";
       break;
   }
 
+  // Cập nhật giao diện
   document.querySelector("#status-icon").style.backgroundColor = iconColor;
   document.querySelector("#status-icon").innerHTML = icon;
-  document.querySelector("#status-text").textContent= statusText;
+  document.querySelector("#status-text").textContent = statusText;
   document.querySelector("#intent-id").textContent = intentId;
   document.querySelector("#intent-status").textContent = intentStatus;
   document.querySelector("#view-details").href = `https://dashboard.stripe.com/payments/${intentId}`;
@@ -58,7 +62,7 @@ function setPaymentDetails(intentStatus, intentId) {
 function setErrorState() {
   document.querySelector("#status-icon").style.backgroundColor = "#DF1B41";
   document.querySelector("#status-icon").innerHTML = ErrorIcon;
-  document.querySelector("#status-text").textContent= "Something went wrong, please try again.";
+  document.querySelector("#status-text").textContent= "Đã xảy ra lỗi, vui lòng thử lại.";
   document.querySelector("#details-table").classList.add("hidden");
   document.querySelector("#view-details").classList.add("hidden");
 }
@@ -72,10 +76,6 @@ async function checkStatus() {
     "payment_intent"
   );
 
-  // fallback để test
-  if (!paymentIntentId) {
-    paymentIntentId = localStorage.getItem("test_intent_id");
-  }
 
   const token = localStorage.getItem("token");
   const res = await fetch("api/payment/sync-intent", {
@@ -87,12 +87,13 @@ async function checkStatus() {
     body: JSON.stringify({ paymentIntentId: paymentIntentId }),
   });
 
-  const {data, error} = await res.json();
-
+  const {data, message, error} = await res.json();
+  console.log("Response from sync-intent:", {data, error});
   if (error) {
+    console.log("Error syncing payment intent:", error);
     setErrorState();
     return;
   }
 
-  setPaymentDetails(data.intentStatus, data.intentId);
+  setPaymentDetails(data.intentStatus, data.intentId, message);
 }

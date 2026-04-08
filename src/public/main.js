@@ -64,5 +64,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     // chuyển sang checkout.html và truyền bookingId qua query string
     window.location.href = `checkout.html?bookingId=${encodeURIComponent(bookingId)}`;
+    localStorage.setItem("bookingId", bookingId);
   });
 });
