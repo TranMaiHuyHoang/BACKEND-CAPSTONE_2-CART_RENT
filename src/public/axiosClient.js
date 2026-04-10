@@ -1,10 +1,10 @@
 
 
-const BASE_URL = "http://localhost:3000/api";
+const BASE_URL = "http://localhost:3000/api"; // Thay đổi nếu backend chạy ở địa chỉ khác
 
 const axiosClient  = axios.create({
   baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" }
+  headers: { "Content-Type": "application/json", "Cache-Control": "no-cache" }
 });
 
 // Request interceptor: tự động gắn token

@@ -10,54 +10,13 @@ const throwError = require('../utils/throwError');
 const BookingService = require('./booking.service');
 const BaseService = require('./base.service');
 const paymentModel = require('../models/payment.model');
-
+const QueryBuilder = require('../utils/queryBuilder');
 const ALLOWED_PAYMENT_STATUSES = [
   'pending',
   'waiting_payment'
 ];
 
-class QueryBuilder {
-  static buildExactFieldFilter(filters = {}) {
-    const filter = {};
 
-    // Exact match filters: chỉ lấy những field có giá trị cụ thể
-    for (const [key, value] of Object.entries(filters)) {
-      if (value !== undefined && value !== null && value !== '') {
-        filter[key] = value;
-      }
-    }
-
-    return filter;
-  }
-
-  static buildSearchFilter(search, fieldsObj = {}) {
-    if (search && String(search).trim()) {
-      const regex = new RegExp(String(search).trim(), 'i');
-
-      // Lấy tất cả key trong object (value không quan trọng)
-      const fields = Object.keys(fieldsObj);
-
-      if (fields.length > 0) {
-        return { $or: fields.map((field) => ({ [field]: regex })) };
-      }
-    }
-    return {};
-  }
-
-  static buildSortOptions(sorts = []) {
-    const sort = {};
-
-    // thêm các field khác
-    for (const { field, value } of sorts) {
-      const direction = BaseService.parseSortDirection(value);
-      if (direction !== null) {
-        sort[field] = direction;
-      }
-    }
-
-    return sort;
-  }
-}
 
 class PaymentService {
   async createPaymentForBooking(bookingId) {

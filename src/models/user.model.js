@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
 
         role: {
             type: String,
-            enum: ["user", "showroom", "admin"],
+            enum: ["user", "showroom", "admin", "owner"],
             default: "user"
         },
 
@@ -31,7 +31,13 @@ const userSchema = new mongoose.Schema(
             type: Boolean,
             default: true
         },
-
+        
+        address: {
+            type: String,
+        },
+        phone: {
+            type: String,
+        },
         age: {
             type: Number,
         },

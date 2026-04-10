@@ -1,47 +1,7 @@
 const Booking = require('../models/booking.model');
 const BaseService = require('./base.service');
 const throwError = require('../utils/throwError');
-
-
-class QueryBuilder  {
-  static buildExactFieldFilter(filters = {}) {
-  const filter = {};
-
-  // Exact match filters: chỉ lấy những field có giá trị cụ thể
-  for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined && value !== null && value !== '') {
-      filter[key] = value;
-    }
-  }
-
-  return filter;
-}
-
-  static buildSearchFilter(search, fields = []) {
-    if (search && String(search).trim()) {
-      const regex = new RegExp(String(search).trim(), 'i');
-      return {
-        $or: fields.map((field) => ({ [field]: regex }))
-      };
-    }
-    return {};
-  }
-
-  static buildSortOptions(sorts = []) {
-    const sort = {};
-
-    // thêm các field khác
-    for (const { field, value } of sorts) {
-      const direction = BaseService.parseSortDirection(value);
-      if (direction !== null) {
-        sort[field] = direction;
-      }
-    }
-
-    return sort;
-  }
-
-}
+const QueryBuilder = require('../utils/queryBuilder');
 
 
 class BookingService {
@@ -51,12 +11,12 @@ class BookingService {
     return booking.save();
   }
 
-  static async getAllBookings(body = {}) {
+  static async getListBookings(body = {}) {
     const { search, status, user_id, showroom_id, sort_by, sort_by_price, page, limit } = body;
 
     const pagination = BaseService.parsePagination({ page, limit });
 
-    const searchFilter = QueryBuilder.buildSearchFilter(search, ['note']);
+    const searchFilter = QueryBuilder.buildSearchFilter(search, {note : 1} );
     const fieldFilter = QueryBuilder.buildExactFieldFilter({ status, user_id, showroom_id });
 
     // const filter = { ...searchFilter, ...fieldFilter };

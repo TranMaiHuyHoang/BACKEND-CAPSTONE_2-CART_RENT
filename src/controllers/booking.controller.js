@@ -15,10 +15,10 @@ class BookingController {
     }
   }
 
-  async getAllBookings(req, res, next) {
+  async getListBookings(req, res, next) {
     try {
         const filters = req.body;
-        const result = await bookingService.getAllBookings(filters);
+        const result = await bookingService.getListBookings(filters);
 
         return res.status(200).json({
             message: "Lấy danh sách booking thành công",

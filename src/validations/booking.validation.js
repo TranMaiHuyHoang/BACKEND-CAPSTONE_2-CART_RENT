@@ -44,7 +44,7 @@ class BookingValidation {
       .isLength({ max: 500 }).withMessage("Không được vượt quá 500 ký tự"),
   ];
 
-  getAllBookings = [
+  getListBookings = [
     body("search").optional().trim(),
 
     body("page")

@@ -69,7 +69,6 @@ function mountPaymentElement(elements, selector = '#payment-element') {
 async function createPaymentForBooking(bookingId) {
   // 1. Lấy trạng thái checkout hiện tại
   const data = await api.get(`/payment/getPaymentState/${bookingId}`, {
-    headers: { "Cache-Control": "no-cache" }
   });
   console.log("payment status:", data.paymentStatus, "booking status:", data.bookingStatus);
   if (data.bookingStatus === "paid" && data.paymentStatus === "successful") {
