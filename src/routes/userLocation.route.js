@@ -3,28 +3,20 @@ const express = require('express');
 const userLocationController = require('../controllers/userLocation.controller');
 const router = express.Router();
 
-router.post('/createUserLocation',
+router.post('/createUserLocation/:userId',
     userLocationController.createUserLocation
 );
 
-// Lấy danh sách tất cả địa chỉ của user
-router.post('/getListUserLocations',
-    userLocationController.getListUserLocations
+router.get('/getUserLocationByUserId/:userId',
+    userLocationController.getUserLocationByUserId
 );
 
-// Lấy chi tiết một địa chỉ theo ID
-router.get('/getUserLocationById/:locationId',
-    userLocationController.getUserLocationById
+router.put('/updateUserLocationByUserId/:userId',
+    userLocationController.updateUserLocationByUserId
 );
 
-// Cập nhật địa chỉ khi thay đổi (ví dụ đường đổi tên)
-router.put('/updateUserLocationById/:locationId',
-    userLocationController.updateUserLocationById
-);
-
-// Xoá một địa chỉ theo ID
-router.delete('/deleteUserLocationById/:locationId',
-    userLocationController.deleteUserLocationById
+router.delete('/deleteUserLocationByUserId/:userId',
+    userLocationController.deleteUserLocationByUserId
 );
 
 module.exports = router;

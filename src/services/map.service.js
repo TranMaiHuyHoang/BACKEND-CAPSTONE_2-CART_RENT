@@ -4,14 +4,14 @@ class MapService {
   /** Forward Geocoding: địa chỉ -> tọa độ */
   async forward(address) {
     const response = await axios.get(
-      `https://api.locationiq.com/v1/search?key=${process.env.LOCATIONIQ_API_KEY}&q=${encodeURIComponent(address)}&format=json`
+      `https://api.locationiq.com/v1/search?key=${process.env.LOCATIONIQ_API_KEY}&q=${encodeURIComponent(address)}&accept-language=vi&format=json`
     );
     return response;
   }
   /** Reverse Geocoding: tọa độ -> địa chỉ */
   async reverse(lat, lon) {
     const response = await axios.get(
-      `https://api.locationiq.com/v1/reverse?key=${process.env.LOCATIONIQ_API_KEY}&lat=${lat}&lon=${lon}&format=json`
+      `https://api.locationiq.com/v1/reverse?key=${process.env.LOCATIONIQ_API_KEY}&lat=${lat}&lon=${lon}&accept-language=vi&format=json`
     );
 
     return response;
@@ -35,7 +35,7 @@ class MapService {
     if (normalizecity) params.append('normalizecity', normalizecity);
 
     const response = await axios.get(
-      `https://api.locationiq.com/v1/autocomplete?${params.toString()}`
+      `https://api.locationiq.com/v1/autocomplete?${params.toString()}&accept-language=vi&format=json`
     );
     return response;
   }

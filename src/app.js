@@ -10,8 +10,7 @@ const bookingRoutes = require('./routes/booking.route')
 const paymentRoutes = require('./routes/payment.route')
 const mapRoutes = require('./routes/map.route')
 
-const vehicleRoutes = require('./routes/vehicle.route');
-const vehicleLocationRoutes = require('./routes/vehicleLocation.routes');
+const userLocationRoutes = require('./routes/userLocation.route');
 const reviewRoutes = require('./routes/review.route');
 const favoriteRoutes = require('./routes/favorite.route');
 // middleware for hand
@@ -36,11 +35,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/vehicle_location', vehicleLocationRoutes);
+app.use('/api/user_location', userLocationRoutes);
 app.use('/api/contact_us', contactUsRoutes);
 app.use('/api/booking/', bookingRoutes)
 app.use('/api/payment/', paymentRoutes)
 app.use('/api/map', mapRoutes);
-
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use(errorHandler);

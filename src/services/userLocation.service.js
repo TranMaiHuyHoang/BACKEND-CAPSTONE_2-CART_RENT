@@ -1,55 +1,32 @@
 const UserLocation = require('../models/userLocation.model');
 const BaseService = require('./base.service');
 const QueryBuilder = require('../utils/queryBuilder');
-
+const userModel = require('../models/user.model');
+const throwError = require('../utils/throwError');
 class UserLocationService {
-  async createUserLocation(body = {}) {
-    const location = await UserLocation.create({ ...body });
+  async createUserLocation(body = {}, userId) {
+    const location = await UserLocation.create({ ...body, user: userId });
     return location
   }
 
-  async getListUserLocations(body = {}) {
-    const {
-      search,
-      page,
-      limit,
-      sort_by,
-      userId
-    } = body;
 
-    // Pagination
-    const pagination = BaseService.parsePagination({ page, limit });
+  async getUserLocationByUserId(userId) {
+    const location = await UserLocation.findOne({ user: userId });
 
-    // Search filter
-    const searchFilter = QueryBuilder.buildSearchFilter(search, { address: true });
+    return location;
+  }
 
-    // Exact field filter
-    const fieldFilter = QueryBuilder.buildExactFieldFilter({ user: userId });
-
-    // Combine filters
-    const filter = { $and: [searchFilter, fieldFilter] };
-
-    // Sort options
-    const sortObj = QueryBuilder.buildSortOptions([
-      { field: 'createdAt', value: sort_by },
-    ]);
-
-    // Query DB với lean để tối ưu
-    return BaseService.findPaginated(UserLocation, filter, sortObj, pagination);
+  async updateUserLocationByUserId(userId, body={}) {
+    return await UserLocation.findOneAndUpdate({ user: userId }, { ...body }, { new: true })
   }
 
 
-  async getUserLocationById(locationId) {
-    return await UserLocation.findById(locationId)
+  async deleteUserLocationByUserId(userId) {
+    return await UserLocation.findOneAndDelete({ user: userId })
   }
 
-  async updateUserLocationById(locationId, body={}) {
-    return await UserLocation.findByIdAndUpdate(locationId, { ...body }, { new: true })
-  }
 
-  async deleteUserLocationById(locationId) {
-    return await UserLocation.findByIdAndDelete(locationId)
-  }
+
 }
 
 module.exports = new UserLocationService();
