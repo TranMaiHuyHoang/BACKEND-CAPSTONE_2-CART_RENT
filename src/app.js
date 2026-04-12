@@ -8,10 +8,11 @@ const vehicleLocationRoutes = require('./routes/vehicleLocation.routes')
 const contactUsRoutes = require('./routes/contactUs.route')
 const bookingRoutes = require('./routes/booking.route')
 const paymentRoutes = require('./routes/payment.route')
+const mapRoutes = require('./routes/map.route')
+
 // middleware for hand
 const errorHandler = require('./middlewares/errorHandler');
 const app = express();
-
 
 
 //// Stop forwarding events
@@ -34,6 +35,8 @@ app.use('/api/vehicle_location', vehicleLocationRoutes);
 app.use('/api/contact_us', contactUsRoutes);
 app.use('/api/booking/', bookingRoutes)
 app.use('/api/payment/', paymentRoutes)
+app.use('/api/map', mapRoutes);
+
 app.use(errorHandler);
 
 

@@ -4,7 +4,6 @@ dotenv.config(); // load .env
 const app = require('./src/app');
 const connectDB = require('./src/config/db');
 var cors = require('cors')
-
 const PORT = process.env.PORT || 3000;
 
 
