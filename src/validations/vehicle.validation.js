@@ -3,7 +3,7 @@ const { body, param } = require("express-validator");
 const VEHICLE_TYPES = ["Sedan", "Bike", "Bicyle", "SUV", "Wagon", "Truck", "others"];
 const CURRENCIES = ["VND", "USD"];
 const CHARGES = ["minutes", "seconds", "hourly", "day", "negotiable"];
-const STATUS = ["Available", "Maintenance", "Rented", "Reserved"];
+const STATUS = ['available', 'waiting_handover', 'rented', 'maintenance', 'reserved'];
 class VehicleValidation {
     createVehicle = [
         body("vehicle_type").notEmpty().isIn(VEHICLE_TYPES),
