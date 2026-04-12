@@ -1,32 +1,66 @@
+const { body } = require("express-validator");
+
 /**
- * Chạy sau multer: kiểm tra req.files (multipart field "files").
- * Format lỗi giống validate.middleware (422).
+ * Multer đưa file vào req.files (không phải req.body).
+ * Dùng body('<tên field form-data>').custom(..., { req }) để kiểm tra req.files — cùng style với các validation khác.
  */
-function validateImageUpload(req, res, next) {
-    const files = req.files || [];
-    const errors = [];
+class UploadValidation {
+    /** Chạy sau multer.array("files"). */
+    validateImageUpload = [
+        body("files").custom((value, { req }) => {
+            const files = req.files || [];
+            if (!files.length) {
+                throw new Error(
+                    "Cần ít nhất một file (form-data, field: files, tối đa 5 file)"
+                );
+            }
+            const badNames = files
+                .filter((f) => !f.mimetype?.startsWith("image/"))
+                .map((f) => f.originalname || "file");
+            if (badNames.length) {
+                throw new Error(`${badNames.join(", ")} không phải ảnh`);
+            }
+            return true;
+        }),
+    ];
 
-    if (!files.length) {
-        errors.push({
-            field: "files",
-            msg: "Cần ít nhất một file (form-data, field: files, tối đa 5 file)",
-        });
-    }
-
-    for (const file of files) {
-        if (!file.mimetype?.startsWith("image/")) {
-            errors.push({
-                field: "files",
-                msg: `${file.originalname || "file"} không phải ảnh`,
-            });
-        }
-    }
-
-    if (errors.length) {
-        return res.status(422).json({ message: "Validation error", errors });
-    }
-
-    next();
+    /** Chạy sau multer.fields([ before_rental, after_return ]). */
+    validateVehicleDamageImages = [
+        body("before_rental").custom((value, { req }) => {
+            const before = req.files?.before_rental;
+            if (!before || !before.length) {
+                throw new Error(
+                    "Cần đúng 1 ảnh xe trước khi cho thuê (form-data, field: before_rental)"
+                );
+            }
+            if (before.length > 1) {
+                throw new Error("Chỉ gửi 1 file cho before_rental");
+            }
+            if (!before[0].mimetype?.startsWith("image/")) {
+                throw new Error(
+                    `${before[0].originalname || "file"} không phải ảnh`
+                );
+            }
+            return true;
+        }),
+        body("after_return").custom((value, { req }) => {
+            const after = req.files?.after_return;
+            if (!after || !after.length) {
+                throw new Error(
+                    "Cần đúng 1 ảnh xe khi trả (form-data, field: after_return)"
+                );
+            }
+            if (after.length > 1) {
+                throw new Error("Chỉ gửi 1 file cho after_return");
+            }
+            if (!after[0].mimetype?.startsWith("image/")) {
+                throw new Error(
+                    `${after[0].originalname || "file"} không phải ảnh`
+                );
+            }
+            return true;
+        }),
+    ];
 }
 
-module.exports = { validateImageUpload };
+module.exports = new UploadValidation();
