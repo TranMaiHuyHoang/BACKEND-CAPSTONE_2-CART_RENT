@@ -25,7 +25,7 @@ class VeHicleController {
         try {
             const vehicleId = req.params.vehicleId;
             const result = await vehicleService.getVehicleById(vehicleId);
-            return res.status(201).json({ message: " Vehicle  received successfully", data: result });
+            return res.status(200).json({ message: "Vehicle received successfully", data: result });
         } catch (error) {
             next(error);
         }
