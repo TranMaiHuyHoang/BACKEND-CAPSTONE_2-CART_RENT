@@ -12,6 +12,9 @@ router.post(
   PaymentController.createPaymentForBooking
 );
 
+router.get("/getMyBooking", authMiddleware, bookingController.getMyBookings);
+router.post("/cancelBooking/:bookingId", authMiddleware, bookingController.cancelBooking)
+
 router.post("/createBooking", authMiddleware, bookingValidation.createBooking, validate, bookingController.createBooking);
 router.post("/getListBookings", authMiddleware, bookingValidation.getListBookings, validate, bookingController.getListBookings);
 router.get("/getBookingById/:bookingId", authMiddleware, bookingValidation.getBookingById, validate, bookingController.getBookingById);

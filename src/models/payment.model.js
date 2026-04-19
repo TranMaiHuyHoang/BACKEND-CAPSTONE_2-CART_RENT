@@ -14,7 +14,7 @@ const paymentSchema = new mongoose.Schema(
         payment_status: {
             type: String,
             required: true,
-            enum: ['pending', 'declined', 'successful', 'failed'],
+            enum: ['pending', 'declined', 'successful', 'failed', 'refunded'],
             default: 'pending'
         },
         stripe_payment_intent_id: { type: String, trim: true },

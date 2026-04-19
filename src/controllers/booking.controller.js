@@ -1,4 +1,5 @@
 const bookingService = require("../services/booking.service");
+const bookingPaymentService = require("../services/bookingPayment.service");
 
 class BookingController {
   async createBooking(req, res, next) {
@@ -34,6 +35,9 @@ class BookingController {
     try {
       const { bookingId } = req.params;
       const result = await bookingService.getBookingById(bookingId);
+      console.log(result);
+
+
       if (!result) {
         return res.status(404).json({
           message: "Không tìm thấy booking",
@@ -72,6 +76,41 @@ class BookingController {
       next(error);
     }
   }
+
+  async getMyBookings(req, res, next) {
+    try {
+      const userId = req.user.userId;
+      const role = req.user.role;
+      const result = await bookingService.getMyBookings(userId, role);
+      return res.status(200).json({
+        message: "Lấy danh sách booking của bạn thành công",
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async cancelBooking(req, res, next) {
+    try {
+      const { bookingId } = req.params;
+      const role = req.user.role;
+      const userId = req.user.userId;
+      const result = await bookingPaymentService.cancelBooking(bookingId, userId , role);
+      if (!result) {
+        return res.status(404).json({
+          message: "Không tìm thấy booking để hủy",
+        });
+      }
+      return res.status(200).json({
+        message: "Hủy booking thành công",
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
 
   async deleteBooking(req, res, next) {
     try {

@@ -71,13 +71,13 @@ async function createPaymentForBooking(bookingId) {
   const data = await api.get(`/payment/getPaymentState/${bookingId}`, {
   });
   console.log("payment status:", data.paymentStatus, "booking status:", data.bookingStatus);
-  if (data.bookingStatus === "paid" && data.paymentStatus === "successful") {
-    return {
-      error: "Booking đã được thanh toán trước đó. Không thể thanh toán lại.",
-      clientSecret: null
-    };
+  // if (data.bookingStatus === "paid" && data.paymentStatus === "successful") {
+  //   return {
+  //     error: "Booking đã được thanh toán trước đó. Không thể thanh toán lại.",
+  //     clientSecret: null
+  //   };
 
-  }
+  // }
 
   const res = await api.post(`/booking/${bookingId}/createPayment/`);
   console.log("Create Payment:", res);

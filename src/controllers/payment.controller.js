@@ -1,13 +1,15 @@
 const paymentService = require('../services/payment.service');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const PaymentModel = require('../models/payment.model');
+const BookingPaymentService = require('../services/bookingPayment.service');
 
 class PaymentController {
   async createPaymentForBooking(req, res, next) {
     try {
       const { bookingId } = req.params;
+      // const userId = req.user._id;
 
-      const payment = await paymentService.createPaymentForBooking(bookingId);
+      const payment = await BookingPaymentService.createPaymentForBooking(bookingId);
 
       return res.status(201).json({
         message: 'Tạo thanh toán thành công',
@@ -19,7 +21,7 @@ class PaymentController {
   }
 
 
-  async createPaymentDB(req, res) {
+  async createPaymentDB(req, res, next) {
     try {
       const { ...body } = req.body;
       const payment = await paymentService.createPaymentDB(body);
@@ -81,6 +83,21 @@ class PaymentController {
       next(err);
     }
   }
+  async updatePaymentStatus(req, res, next) {
+    try {
+      const { paymentId } = req.params;
+      const { paymentStatus } = req.body;
+
+      const updatedPayment = await paymentService.updatePaymentDBStatus(paymentId, paymentStatus);
+
+      if (!updatedPayment) {
+        return res.status(404).json({ message: "Không tìm thấy payment để cập nhật" });
+      }
+    } catch (err) {
+      next(err);
+    }
+  }
+
 
   async getPaymentState(req, res, next) {
     try {
@@ -97,27 +114,29 @@ class PaymentController {
     }
   }
 
-  /** Cập nhật trạng thái của payment db và booking db, trả về intent id và intent status cho frontend xử lý */
-  async syncPaymentIntentWithDB(req, res, next) {
+  async confirmPayment(req, res, next) {
     try {
       const { paymentIntentId } = req.body;
 
-      const { intent, paymentStatus, bookingStatus } = await paymentService.syncPaymentIntentWithDB(paymentIntentId);
+      const { intent, paymentStatus, bookingStatus } = await BookingPaymentService.confirmPaymentFromStripe(paymentIntentId);
 
-      // dựng message ngắn gọn
-      const statusMessage =
-        paymentStatus === 'successful'
-          ? `Thanh toán ${intent.amount} ${intent.currency} thành công!`
-          : paymentStatus === 'failed'
-            ? `Thanh toán ${intent.amount} ${intent.currency} thất bại hoặc bị hủy!`
-            : `Intent đang ở trạng thái: ${intent.status}`;
+      // message (giữ Stripe data)
+      let message = `Intent đang ở trạng thái: ${intent.status}`;
+
+      if (paymentStatus === 'successful') {
+        message = `Thanh toán ${intent.amount} ${intent.currency} thành công!`;
+      } else if (paymentStatus === 'failed') {
+        message = `Thanh toán ${intent.amount} ${intent.currency} thất bại hoặc bị hủy!`;
+      }
+
 
       return res.status(200).json({
-        message: statusMessage,
-        data: { 
-          intentId: intent.id, 
-          intentStatus: intent.status, 
-          paymentStatus, bookingStatus 
+        message: message,
+        data: {
+          intentId: intent.id,
+          intentStatus: intent.status,
+          paymentStatus, 
+          bookingStatus
         }
       });
     } catch (error) {

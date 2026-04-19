@@ -1,22 +1,87 @@
-const Booking = require('../models/booking.model');
+const BookingModel = require('../models/booking.model');
 const BaseService = require('./base.service');
 const throwError = require('../utils/throwError');
 const QueryBuilder = require('../utils/queryBuilder');
+const PaymentModel = require('../models/payment.model');
+const PaymentService = require('./payment.service');
 
+const BOOKING_VALID_TRANSITIONS = {
+  'pending': ['waiting_payment', 'paid', 'confirmed', 'cancelled'],
+  'waiting_payment': ['paid', 'cancelled'],
+  'paid': ['confirmed', 'cancelled'],
+  'confirmed': ['waiting_handover', 'cancelled'],
+  'waiting_handover': ['handed_over', 'cancelled'],
+  'handed_over': ['in_use'],
+  'in_use': ['waiting_return_confirmation'],
+  'waiting_return_confirmation': ['completed'],
+  'completed': [],
+  'cancelled': []
+};
+
+const CAN_BE_CANCELLED = ['pending', 'waiting_payment', 'paid', 'confirmed'];
 
 class BookingService {
 
   static async createBooking(data) {
-    const booking = new Booking(data);
+    const booking = new BookingModel(data);
     return booking.save();
   }
+
+  static async getMyBookings(userId, role) {
+    if (role === 'user' || role === 'owner') {
+      return BookingModel.find({ user_id: userId })
+        .populate('showroom_id', 'name email')
+        .populate('vehicle_id')
+    }
+    else if (role === 'showroom') {
+      return BookingModel.find({ showroom_id: userId })
+        .populate('user_id', 'name email')
+        .populate('vehicle_id');
+    }
+    else if (role === 'admin') {
+      return BookingModel.find({ $or: [{ user_id: userId }, { showroom_id: userId }] })
+        .populate('user_id')
+        .populate('showroom_id')
+        .populate('vehicle_id');
+    }
+    else {
+      throwError('Role không hợp lệ', 400);
+    }
+  }
+
+  static async validateCancelBooking(bookingId, userId, role) {
+    const booking = await BookingModel.findById(bookingId);
+
+    if (!booking) {
+      throwError('Không tìm thấy booking', 404);
+    }
+
+    const isUser = String(booking.user_id) === String(userId) && role === 'user';
+    const isShowroom = String(booking.showroom_id) === String(userId) && role === 'showroom';
+    const adminRole = role === 'admin';
+
+    if (!isUser && !isShowroom && !adminRole) {
+      throwError('Bạn không có quyền hủy booking này', 403);
+    }
+
+    if (booking.status === 'cancelled') {
+      throwError('Booking đã được hủy trước đó');
+    }
+
+    if (!CAN_BE_CANCELLED.includes(booking.status)) {
+      throwError(`Không thể hủy booking ở trạng thái ${booking.status}`, 400);
+    }
+
+    return booking;
+  }
+
 
   static async getListBookings(body = {}) {
     const { search, status, user_id, showroom_id, sort_by, sort_by_price, page, limit } = body;
 
     const pagination = BaseService.parsePagination({ page, limit });
 
-    const searchFilter = QueryBuilder.buildSearchFilter(search, {note : 1} );
+    const searchFilter = QueryBuilder.buildSearchFilter(search, { note: 1 });
     const fieldFilter = QueryBuilder.buildExactFieldFilter({ status, user_id, showroom_id });
 
     // const filter = { ...searchFilter, ...fieldFilter };
@@ -32,28 +97,40 @@ class BookingService {
   }
 
   static async getBookingById(id) {
-    return Booking.findById(id)
-
+    return BookingModel.findById(id)
   }
 
-  static async updateBookingStatus(id, status) {
-    const booking = await Booking.findById(id);
-    if (!booking) throwError('Booking không tồn tại');
 
-    const validStatuses = Booking.schema.path('status').enumValues;
+  static async updateBookingStatus(id, newStatus, options = {}) {
+    const booking = await BookingModel.findById(id);
+    if (!booking) throw new Error('Booking không tồn tại');
 
-    if (!validStatuses || !validStatuses.includes(status)) {
-      throw new Error(`Trạng thái "${status}" không hợp lệ`);
+    const oldStatus = booking.status;
+
+    const validEnumStatuses = BookingModel.schema.path('status').enumValues;
+    if (!validEnumStatuses.includes(newStatus)) {
+      throw new Error(`Trạng thái "${newStatus}" không tồn tại trong hệ thống`);
     }
-    // dùng log để audit hoặc giải quyết tranh chấp nếu cần
 
-    booking.status = status;
-    return booking.save();
+    const allowedTransitions = BOOKING_VALID_TRANSITIONS[oldStatus] || [];
+
+    if (oldStatus !== newStatus && !allowedTransitions.includes(newStatus)) {
+      const allowedText = allowedTransitions.length
+        ? `[${allowedTransitions.join(', ')}]`
+        : 'KHÔNG CÓ (trạng thái cuối, không thể chuyển tiếp)';
+
+      throwError(`Không thể chuyển Booking từ "${oldStatus}" → "${newStatus}". ` +
+        `Các trạng thái hợp lệ: ${allowedText}`
+        , 400);
+    }
+
+    booking.status = newStatus;
+
+    return await booking.save(options);
   }
-
 
   static async deleteBooking(id) {
-    return Booking.findByIdAndDelete(id);
+    return BookingModel.findByIdAndDelete(id);
   }
 }
 

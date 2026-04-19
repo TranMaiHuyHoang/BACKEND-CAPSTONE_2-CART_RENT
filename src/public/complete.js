@@ -78,7 +78,7 @@ async function checkStatus() {
 
 
   const token = localStorage.getItem("token");
-  const res = await fetch("api/payment/sync-intent", {
+  const res = await fetch("api/payment/confirmPayment", {
     method: "POST",
     headers: { "Content-Type": "application/json",
       "Authorization": `Bearer ${token}`,
@@ -88,7 +88,7 @@ async function checkStatus() {
   });
 
   const {data, message, error} = await res.json();
-  console.log("Response from sync-intent:", {data, error});
+  console.log("Response from confirmPayment:", {data, error});
   if (error) {
     console.log("Error syncing payment intent:", error);
     setErrorState();
