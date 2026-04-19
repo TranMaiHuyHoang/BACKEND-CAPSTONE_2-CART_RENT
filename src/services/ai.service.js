@@ -1,4 +1,4 @@
-const OpenAI = require("openai");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const throwError = require("../utils/throwError");
 
 const DAMAGE_SCHEMA_HINT = `{
@@ -12,17 +12,18 @@ const DAMAGE_SCHEMA_HINT = `{
 
 class AiService {
     constructor() {
-        this._client = null;
+        this._genAI = null;
     }
 
-    getClient() {
-        if (!process.env.OPENAI_API_KEY) {
-            throwError("OPENAI_API_KEY chưa được cấu hình", 503);
+    getGenAI() {
+        const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+        if (!apiKey) {
+            throwError("GEMINI_API_KEY (hoặc GOOGLE_API_KEY) chưa được cấu hình", 503);
         }
-        if (!this._client) {
-            this._client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        if (!this._genAI) {
+            this._genAI = new GoogleGenerativeAI(apiKey);
         }
-        return this._client;
+        return this._genAI;
     }
 
     /**
@@ -31,9 +32,18 @@ class AiService {
      * @param {{ buffer: Buffer, mimetype: string }} after - ảnh khi trả xe
      */
     async compareVehicleRentalDamage(before, after) {
-        const client = this.getClient();
-        const beforeUrl = `data:${before.mimetype};base64,${before.buffer.toString("base64")}`;
-        const afterUrl = `data:${after.mimetype};base64,${after.buffer.toString("base64")}`;
+        const genAI = this.getGenAI();
+        const modelName = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+
+        const model = genAI.getGenerativeModel({
+            model: modelName,
+            systemInstruction:
+                "Bạn là chuyên gia đánh giá tình trạng xe cho thuê. Luôn trả lời đúng định dạng JSON được yêu cầu, tiếng Việt.",
+            generationConfig: {
+                maxOutputTokens: 1200,
+                responseMimeType: "application/json",
+            },
+        });
 
         const userText = [
             "Bạn nhận hai ảnh xe ô tô (hoặc xe máy) theo thứ tự:",
@@ -47,29 +57,38 @@ class AiService {
             '"disclaimer" phải nhắc rằng đánh giá mang tính hỗ trợ, không thay thế kiểm tra thực tế / pháp lý.',
         ].join("\n");
 
-        const completion = await client.chat.completions.create({
-            model: process.env.OPENAI_VISION_MODEL || "gpt-4o-mini",
-            max_tokens: 1200,
-            messages: [
-                {
-                    role: "system",
-                    content:
-                        "Bạn là chuyên gia đánh giá tình trạng xe cho thuê. Luôn trả lời đúng định dạng JSON được yêu cầu, tiếng Việt.",
+        const result = await model.generateContent([
+            { text: userText },
+            {
+                inlineData: {
+                    mimeType: before.mimetype,
+                    data: before.buffer.toString("base64"),
                 },
-                {
-                    role: "user",
-                    content: [
-                        { type: "text", text: userText },
-                        { type: "image_url", image_url: { url: beforeUrl } },
-                        { type: "image_url", image_url: { url: afterUrl } },
-                    ],
+            },
+            {
+                inlineData: {
+                    mimeType: after.mimetype,
+                    data: after.buffer.toString("base64"),
                 },
-            ],
-        });
+            },
+        ]);
 
-        const raw = completion.choices[0]?.message?.content?.trim();
+        const response = result.response;
+        let raw;
+        try {
+            raw = response.text()?.trim();
+        } catch {
+            raw = "";
+        }
+
         if (!raw) {
-            throwError("OpenAI không trả về nội dung", 502);
+            const blockReason = response.promptFeedback?.blockReason;
+            throwError(
+                blockReason
+                    ? `Gemini từ chối yêu cầu (${blockReason})`
+                    : "Gemini không trả về nội dung",
+                502,
+            );
         }
 
         return this._parseJsonResponse(raw);
