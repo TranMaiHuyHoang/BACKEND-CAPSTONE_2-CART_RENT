@@ -52,6 +52,27 @@ class BookingController {
     }
   }
 
+
+/**
+ * Kiểm tra xem xe có sẵn trong khoảng thời gian yêu cầu hay không.
+ * @description
+ * Dùng để kiểm tra khoảng thời gian **mới (proposed dates)** mà user muốn đặt hoặc sửa booking.
+ * @property [req.body.excludeBookingId] - ID của booking cần bỏ qua khi kiểm tra trùng lịch.
+ *   - Khi **chỉnh sửa booking hiện có**: bắt buộc phải truyền chính ID của booking đó,
+ *     nếu không hệ thống sẽ tính nó là trùng với chính nó và trả về kết quả sai.
+ *     Ví dụ: đang sửa booking ID "123" thì truyền excludeBookingId = "123".
+ *   - Khi **tạo mới booking**: không cần truyền field này.
+ */
+  async checkAvailability(req, res, next) {
+    const { vehicleId, pickupDate, returnDate, excludeBookingId } = req.body;
+    try {
+      const result = await bookingService.checkAvailability(vehicleId, pickupDate, returnDate, excludeBookingId);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async updateBookingStatus(req, res, next) {
     try {
       const { bookingId } = req.params;

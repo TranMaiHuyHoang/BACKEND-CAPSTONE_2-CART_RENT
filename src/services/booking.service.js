@@ -20,6 +20,11 @@ const BOOKING_VALID_TRANSITIONS = {
 
 const CAN_BE_CANCELLED = ['pending', 'waiting_payment', 'paid', 'confirmed'];
 
+IGNORED_OVERLAP_STATUSES = [
+  'cancelled',
+  'completed'
+];
+
 class BookingService {
 
   static async createBooking(data) {
@@ -73,6 +78,46 @@ class BookingService {
     }
 
     return booking;
+  }
+
+  static isOverlapping = (existingStart, existingEnd, newPickup, newReturn) => {
+    return (
+      existingStart.getTime() < newReturn.getTime() &&
+      newPickup.getTime() < existingEnd.getTime()
+    );
+  };
+
+
+  static async checkAvailability(vehicleId, pickupDate, returnDate, excludeBookingId) {
+    const pickup = new Date(pickupDate);
+    const returnD = new Date(returnDate);
+
+    if (pickup >= returnD) {
+      throwError("Ngày trả phải sau ngày nhận", 400);
+    }
+
+    const bookings = await BookingModel.find({
+      vehicle_id: vehicleId,
+      status: { $nin: IGNORED_OVERLAP_STATUSES },
+      _id: { $ne: excludeBookingId }
+    });
+
+    const overlapping = bookings.filter(booking =>
+      this.isOverlapping(booking.start_date, booking.end_date, pickup, returnD)
+    );
+
+    return {
+      isAvailable: overlapping.length === 0,
+      overlappingBookings: overlapping.map(b => ({
+        bookingId: b._id,
+        startDate: b.start_date,
+        endDate: b.end_date,
+        status: b.status
+      })),
+      message: overlapping.length > 0
+        ? `Xe đã có ${overlapping.length} lịch thuê chồng lấn`
+        : "Xe trống trong khoảng thời gian này"
+    };
   }
 
 

@@ -14,6 +14,7 @@ router.post(
 
 router.get("/getMyBooking", authMiddleware, bookingController.getMyBookings);
 router.post("/cancelBooking/:bookingId", authMiddleware, bookingController.cancelBooking)
+router.post("/checkAvailability", bookingController.checkAvailability);
 
 router.post("/createBooking", authMiddleware, bookingValidation.createBooking, validate, bookingController.createBooking);
 router.post("/getListBookings", authMiddleware, bookingValidation.getListBookings, validate, bookingController.getListBookings);
