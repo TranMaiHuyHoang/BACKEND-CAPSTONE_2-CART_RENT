@@ -16,6 +16,21 @@ class UserLocationController {
     }
   }
 
+  async getMyLocation(req, res, next) {
+    try {
+      const userId = req.user.userId;
+      const location = await userLocationService.getUserLocationByUserId(userId);
+      if (!location) {
+        return res.status(404).json({ message: 'Không tìm thấy location của tôi' });
+      }
+      res.status(200).json({
+        message: 'Lấy location của tôi thành công',
+        data: location
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 
   async getUserLocationByUserId(req, res, next) {
     try {
@@ -56,6 +71,21 @@ class UserLocationController {
       res.status(200).json({
         message: 'Xoá location thành công',
         data: location
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  async getShowroomsLocation(req, res, next) {
+    try {
+      const showroomLocations = await userLocationService.getShowroomsLocation();
+      if (!showroomLocations || showroomLocations.length === 0) {
+        return res.status(404).json({ message: "Không tìm thấy location showroom nào" });
+      }
+
+      res.status(200).json({
+        message: 'Lấy location của showroom thành công',
+        data: showroomLocations
       });
     } catch (error) {
       next(error);

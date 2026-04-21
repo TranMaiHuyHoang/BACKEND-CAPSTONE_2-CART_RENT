@@ -68,6 +68,19 @@ class MapController {
             next(error);
         }
     }
+
+    async directions(req, res, next) {
+    try {
+      const { profile, coordinates } = req.query;
+      const result = await mapService.getDirections(profile, coordinates);
+      res.status(200).json({
+        message: 'Lấy đường đi nhanh nhất giữa các tọa độ theo thứ tự cung cấp.',
+        data: result.data
+    });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new MapController();
