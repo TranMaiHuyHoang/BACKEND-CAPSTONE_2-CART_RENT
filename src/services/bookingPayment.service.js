@@ -88,61 +88,71 @@ class BookingPaymentService {
         }
         return result;
     }
-    async cancelBooking(bookingId, userId, role) {
+
+
+    async cancelBookingWithRefund(bookingId) {
         const session = await mongoose.startSession();
-        let result;
 
+        let refund = null;
+        let paymentStatus = null;
+        let bookingStatus = 'cancel_pending';
+        let payment = null;
+        let result = null;
         try {
-            // 1. validate trước
-            await BookingService.validateCancelBooking(
-                bookingId,
-                userId,
-                role
-            );
+            // 1. validate
+            payment = await PaymentModel.findOne({ booking_id: bookingId });
+            if (!payment) throwError('Không tìm thấy payment', 404);
 
-            const payment = await PaymentModel.findOne({ booking_id: bookingId });
-
-            let refund = null;
-            let bookingStatus = null;
-            let paymentStatus = null;
-            console.log(payment);
-            // 2. nếu cần refund → gọi Stripe NGOÀI transaction
-            if (payment.payment_status === 'successful') {
-                refund = await PaymentService.processRefundOnly(
-                    payment,
-                    'requested_by_customer'
-                );
-            }
-
-            // 3. transaction DB (DUY NHẤT)
             await session.withTransaction(async () => {
+                // cancel booking (reuse)
+                await BookingService.updateBookingStatus(
+                    bookingId,
+                    'cancel_pending',
+                    { session }
+                );
+                if (['pending', 'failed'].includes(payment.payment_status)) {
 
-                if (payment.payment_status === 'pending' || payment.payment_status === 'failed') {
                     paymentStatus = 'declined';
-                    await PaymentService.updatePaymentDBStatus(
-                        payment._id,
-                        paymentStatus,
-                        { session }
-                    );
 
-
-                } else if (payment.payment_status === 'successful') {
-                    paymentStatus = 'refunded';
                     await PaymentService.updatePaymentDBStatus(
                         payment._id,
                         paymentStatus,
                         { session }
                     );
                 }
-                bookingStatus = 'cancelled';
-                // 👇 CHỈ 1 chỗ update booking
-                await BookingService.updateBookingStatus(
-                    bookingId,
-                    bookingStatus,
-                    { session }
-                );
             });
+            //ngoài transaction
+            // 3. gọi refund (ngoài transaction)
+            if (payment.payment_status === 'successful') {
+                try {
+                    refund = await PaymentService.processRefund(
+                        payment,
+                        'requested_by_customer'
+                    );
 
+                    paymentStatus = 'refunded';
+                    bookingStatus = 'cancelled';
+                    await PaymentService.updatePaymentDBStatus(
+                        payment._id,
+                        paymentStatus
+                    );
+                    // Cập nhật trạng thái cuối cùng sau khi Stripe OK
+                    await Promise.all([
+                        BookingService.updateBookingStatus(bookingId, bookingStatus),
+                        PaymentService.updatePaymentDBStatus(payment._id, paymentStatus)
+                    ]);
+                }
+                catch (stripeError) {
+                    bookingStatus = 'cancel_failed';
+                    await BookingService.updateBookingStatus(bookingId, bookingStatus);
+                    console.error("Stripe Refund Error:", stripeError);
+                    throwError(`Lỗi hoàn tiền: ${stripeError.message}`, 500);
+                }
+            }
+            else if (paymentStatus === 'declined') {
+                bookingStatus = 'cancelled'; // Nếu ko có refund, hủy luôn đơn
+                await BookingService.updateBookingStatus(bookingId, bookingStatus);
+            }
             result = {
                 bookingId,
                 bookingStatus,
@@ -151,12 +161,13 @@ class BookingPaymentService {
                 intentId: refund?.payment_intent || null,
                 refundStatus: refund?.status || null
             }
-
-        } finally {
-            session.endSession();
+        }
+        finally {
+            await session.endSession();
         }
         return result;
     }
+
 
     async confirmPaymentFromStripe(paymentIntentId) {
         // 1. Stripe

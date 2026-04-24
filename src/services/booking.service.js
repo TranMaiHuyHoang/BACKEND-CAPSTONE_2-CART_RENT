@@ -8,9 +8,11 @@ const PaymentService = require('./payment.service');
 const BOOKING_VALID_TRANSITIONS = {
   'pending': ['waiting_payment', 'paid', 'confirmed', 'cancelled'],
   'waiting_payment': ['paid', 'cancelled'],
-  'paid': ['confirmed', 'cancelled'],
-  'confirmed': ['waiting_handover', 'cancelled'],
-  'waiting_handover': ['handed_over', 'cancelled'],
+  'paid': ['confirmed', 'cancel_pending'],
+  'confirmed': ['waiting_handover', 'cancel_pending'],
+  'waiting_handover': ['handed_over', 'cancel_pending'],
+  'cancel_pending': ['cancelled', 'cancel_failed'], // Đang refund -> Thành công hoặc Lỗi
+  'cancel_failed': ['cancelled', 'cancel_pending'],  // Lỗi -> Cho phép Admin thử lại (pending) hoặc đóng bằng tay (cancelled)
   'handed_over': ['in_use'],
   'in_use': ['waiting_return_confirmation'],
   'waiting_return_confirmation': ['completed'],
@@ -19,6 +21,11 @@ const BOOKING_VALID_TRANSITIONS = {
 };
 
 const CAN_BE_CANCELLED = ['pending', 'waiting_payment', 'paid', 'confirmed'];
+
+const EARLY_CANCEL = [
+  'pending',
+  'waiting_payment'
+];
 
 IGNORED_OVERLAP_STATUSES = [
   'cancelled',
@@ -54,31 +61,7 @@ class BookingService {
     }
   }
 
-  static async validateCancelBooking(bookingId, userId, role) {
-    const booking = await BookingModel.findById(bookingId);
 
-    if (!booking) {
-      throwError('Không tìm thấy booking', 404);
-    }
-
-    const isUser = String(booking.user_id) === String(userId) && role === 'user';
-    const isShowroom = String(booking.showroom_id) === String(userId) && role === 'showroom';
-    const adminRole = role === 'admin';
-
-    if (!isUser && !isShowroom && !adminRole) {
-      throwError('Bạn không có quyền hủy booking này', 403);
-    }
-
-    if (booking.status === 'cancelled') {
-      throwError('Booking đã được hủy trước đó');
-    }
-
-    if (!CAN_BE_CANCELLED.includes(booking.status)) {
-      throwError(`Không thể hủy booking ở trạng thái ${booking.status}`, 400);
-    }
-
-    return booking;
-  }
 
   static isOverlapping = (existingStart, existingEnd, newPickup, newReturn) => {
     return (
@@ -145,18 +128,7 @@ class BookingService {
     return BookingModel.findById(id)
   }
 
-
-  static async updateBookingStatus(id, newStatus, options = {}) {
-    const booking = await BookingModel.findById(id);
-    if (!booking) throw new Error('Booking không tồn tại');
-
-    const oldStatus = booking.status;
-
-    const validEnumStatuses = BookingModel.schema.path('status').enumValues;
-    if (!validEnumStatuses.includes(newStatus)) {
-      throw new Error(`Trạng thái "${newStatus}" không tồn tại trong hệ thống`);
-    }
-
+  static assertValidBookingTransition(oldStatus, newStatus) {
     const allowedTransitions = BOOKING_VALID_TRANSITIONS[oldStatus] || [];
 
     if (oldStatus !== newStatus && !allowedTransitions.includes(newStatus)) {
@@ -164,15 +136,70 @@ class BookingService {
         ? `[${allowedTransitions.join(', ')}]`
         : 'KHÔNG CÓ (trạng thái cuối, không thể chuyển tiếp)';
 
-      throwError(`Không thể chuyển Booking từ "${oldStatus}" → "${newStatus}". ` +
-        `Các trạng thái hợp lệ: ${allowedText}`
-        , 400);
+      throwError(
+        `Không thể chuyển Booking từ "${oldStatus}" → "${newStatus}". ` +
+        `Các trạng thái hợp lệ: ${allowedText}`,
+        400
+      );
     }
+  }
+
+
+  static async cancelBooking(bookingId, options = {}) {
+    const { session } = options;
+    const booking = await BookingModel.findById(bookingId);
+    if (!booking) {
+      throwError('Không tìm thấy booking', 404);
+    }
+    if (booking.status === 'cancelled') {
+      throwError('Booking đã được hủy trước đó');
+    }
+    if (!CAN_BE_CANCELLED.includes(booking.status)) {
+      throwError(`Không thể hủy booking ở trạng thái ${booking.status}`, 400);
+    }
+
+    BookingService.assertValidBookingTransition(booking.status, 'cancelled');
+    const updatedBooking = await BookingModel.findByIdAndUpdate(
+      bookingId,
+      {
+        note: `Đã hủy vào lúc ${new Date().toISOString()}`,
+        status: 'cancelled'
+      },
+      { new: true, session: session ? session : null }
+    );
+
+    if (!updatedBooking) {
+      throwError('Không thể cập nhật booking', 404);
+    }
+
+    return {
+      bookingId,
+      bookingStatus: updatedBooking.status,
+      note: updatedBooking.note
+    };
+  }
+
+
+  static async updateBookingStatus(id, newStatus, options = {}) {
+    const booking = await BookingModel.findById(id);
+    if (!booking) throwError('Booking không tồn tại');
+
+    const oldStatus = booking.status;
+
+    const validEnumStatuses = BookingModel.schema.path('status').enumValues;
+    if (!validEnumStatuses.includes(newStatus)) {
+      throwError(`Trạng thái "${newStatus}" không tồn tại trong hệ thống`);
+    }
+    this.assertValidBookingTransition(oldStatus, newStatus);
 
     booking.status = newStatus;
 
     return await booking.save(options);
   }
+
+ 
+
+
 
   static async deleteBooking(id) {
     return BookingModel.findByIdAndDelete(id);

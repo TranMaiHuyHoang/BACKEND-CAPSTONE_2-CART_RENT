@@ -166,13 +166,24 @@ class PaymentService {
     return payment.toObject();
   }
 
-  async processRefundOnly(payment, reason = 'requested_by_customer') {
-    if (!payment || payment.payment_status !== 'successful') {
-      throwError("Giao dịch không hợp lệ để hoàn tiền");
+  
+  async processRefund(paymentId, reason = 'requested_by_customer') {
+    const payment = await PaymentModel.findById(paymentId);
+
+    if (!payment) {
+      throwError('Không tìm thấy dữ liệu thanh toán', 404);
+    }
+    if (payment.payment_status !== 'successful') {
+      throwError("Giao dịch không hợp lệ để hoàn tiền (status: " + payment.payment_status + ")", 400);
     }
 
     if (!payment.stripe_payment_intent_id) {
       throwError("Không có Payment Intent ID");
+    }
+
+    const validReasons = ['requested_by_customer', 'fraudulent', 'duplicate'];
+      if (!validReasons.includes(reason)) {
+      throwError(`Lý do hoàn tiền không hợp lệ. Cho phép: ${validReasons.join(', ')}`);
     }
 
     // 👇 gọi Stripe (KHÔNG có transaction)
@@ -182,10 +193,12 @@ class PaymentService {
     });
 
     if (refund.status !== 'succeeded') {
-      throwError("Stripe từ chối hoàn tiền");
+      throwError(`Stripe từ chối hoàn tiền: ${refund.failure_reason || 'Unknown error'}`);
     }
+    payment.status = 'refunded';
+    await payment.save();
 
-    return refund;
+    return refund
   }
 }
 

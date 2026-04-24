@@ -15,6 +15,25 @@ class BookingController {
       next(error);
     }
   }
+  async cancelBookingWithRefund(req, res, next) {
+  try {
+    const { bookingId } = req.params;
+
+    // Gọi service đã viết sẵn
+    const result = await bookingPaymentService.cancelBookingWithRefund(bookingId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Booking đã được hủy và thực hiện hoàn tiền (nếu có).',
+      data: result,
+    });
+  } catch (err) {
+    // Đưa lỗi cho middleware xử lý lỗi chung của bạn
+    return next(err);
+  }
+}
+
+
 
   async getListBookings(req, res, next) {
     try {
@@ -115,9 +134,7 @@ class BookingController {
   async cancelBooking(req, res, next) {
     try {
       const { bookingId } = req.params;
-      const role = req.user.role;
-      const userId = req.user.userId;
-      const result = await bookingPaymentService.cancelBooking(bookingId, userId , role);
+      const result = await bookingService.cancelBooking(bookingId);
       if (!result) {
         return res.status(404).json({
           message: "Không tìm thấy booking để hủy",
