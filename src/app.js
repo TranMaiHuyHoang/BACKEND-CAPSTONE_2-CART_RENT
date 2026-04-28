@@ -13,6 +13,7 @@ const mapRoutes = require('./routes/map.route')
 const userLocationRoutes = require('./routes/userLocation.route');
 const reviewRoutes = require('./routes/review.route');
 const favoriteRoutes = require('./routes/favorite.route');
+const rentalContractRoutes = require('./routes/rentalContract.route');
 // middleware for hand
 const errorHandler = require('./middlewares/errorHandler');
 const initCron = require('./services/cron.service'); // Import từ thư mục cron
@@ -47,6 +48,7 @@ app.use('/api/payment/', paymentRoutes)
 app.use('/api/map', mapRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/favorites', favoriteRoutes);
+app.use('/api/rental-contract', rentalContractRoutes);
 app.use(errorHandler);
 
 
