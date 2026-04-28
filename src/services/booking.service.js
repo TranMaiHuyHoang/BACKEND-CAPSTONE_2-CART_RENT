@@ -6,13 +6,13 @@ const PaymentModel = require('../models/payment.model');
 const PaymentService = require('./payment.service');
 
 const BOOKING_VALID_TRANSITIONS = {
-  'pending': ['waiting_payment', 'paid', 'confirmed', 'cancelled'],
-  'waiting_payment': ['paid', 'cancelled'],
-  'paid': ['confirmed', 'cancel_pending'],
-  'confirmed': ['waiting_handover', 'cancel_pending'],
-  'waiting_handover': ['handed_over', 'cancel_pending'],
-  'cancel_pending': ['cancelled', 'cancel_failed'], // Đang refund -> Thành công hoặc Lỗi
-  'cancel_failed': ['cancelled', 'cancel_pending'],  // Lỗi -> Cho phép Admin thử lại (pending) hoặc đóng bằng tay (cancelled)
+  'pending': ['waiting_payment', 'paid', 'confirmed', 'processing', 'cancelled'],
+  // processing chỉ dùng cho luồng gọi Stripe bên ngoài
+  'waiting_payment': ['paid', 'processing', 'cancelled'],
+  'paid': ['confirmed', 'processing', 'cancelled'],
+  'confirmed': ['waiting_handover', 'processing', 'cancelled'],
+  'processing': ['paid', 'waiting_payment', 'cancelled'],
+  'waiting_handover': ['handed_over', 'cancelled'],
   'handed_over': ['in_use'],
   'in_use': ['waiting_return_confirmation'],
   'waiting_return_confirmation': ['completed'],
@@ -33,6 +33,13 @@ IGNORED_OVERLAP_STATUSES = [
 ];
 
 class BookingService {
+
+  /** Trạng thái không còn transition trong BOOKING_VALID_TRANSITIONS */
+  static isTerminalBookingStatus(status) {
+    if (status == null || status === '') return false;
+    const allowed = BOOKING_VALID_TRANSITIONS[status];
+    return Array.isArray(allowed) && allowed.length === 0;
+  }
 
   static async createBooking(data) {
     const booking = new BookingModel(data);
@@ -144,8 +151,10 @@ class BookingService {
     }
   }
 
+  
 
-  static async cancelBooking(bookingId, options = {}) {
+
+  static async cancelBookingOnly(bookingId, options = {}) {
     const { session } = options;
     const booking = await BookingModel.findById(bookingId);
     if (!booking) {

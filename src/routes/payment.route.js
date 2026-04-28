@@ -11,6 +11,9 @@ router.post(
 );
 
 router.post('/processRefund', paymentController.processRefund);
+router.get('/getRefundInfo/:paymentIntentId', paymentController.getRefundInfo);
+
+// router.post('/cancelExpiredStripeIntent/:intentId', paymentController.cancelExpiredStripeIntent);
 
 router.post('/createPaymentDB', paymentController.createPaymentDB);
 router.get('/getPaymentIntent/:intentId', paymentController.getPaymentIntentById);

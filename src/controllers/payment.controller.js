@@ -1,7 +1,7 @@
 const paymentService = require('../services/payment.service');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const PaymentModel = require('../models/payment.model');
-const BookingPaymentService = require('../services/bookingPayment.service');
+const bookingHandlerService = require('../services/bookingHandler.service');
 
 class PaymentController {
   async createPaymentForBooking(req, res, next) {
@@ -9,7 +9,7 @@ class PaymentController {
       const { bookingId } = req.params;
       // const userId = req.user._id;
 
-      const payment = await BookingPaymentService.createPaymentForBooking(bookingId);
+      const payment = await bookingHandlerService.createPaymentForBooking(bookingId);
 
       return res.status(201).json({
         message: 'Tạo thanh toán thành công',
@@ -83,6 +83,9 @@ class PaymentController {
       next(err);
     }
   }
+
+
+
   async updatePaymentStatus(req, res, next) {
     try {
       const { paymentId } = req.params;
@@ -133,6 +136,31 @@ class PaymentController {
       next(err);
     }
   }
+  async cancelExpiredStripeIntent(req, res, next) {
+  try {
+    const { intentId } = req.params;
+    const cancelledIntent = await paymentService.cancelExpiredStripeIntent(intentId);
+    return res.status(200).json({
+      message: 'Hủy Intent thanh toán thành công',
+      data: cancelledIntent,
+    });
+  } catch (err) {
+    next(err);
+  }
+ }
+
+  async getRefundInfo(req, res, next) {
+    const { paymentIntentId } = req.params;
+
+    try {
+      const refundInfo = await paymentService.getRefundInfo(paymentIntentId);
+      res.status(200).json(refundInfo);
+    } catch (err) {
+      // Forward to your global error‑handling middleware
+      next(err);
+    }
+  }
+
 
 
 
@@ -140,7 +168,7 @@ class PaymentController {
     try {
       const { paymentIntentId } = req.body;
 
-      const { intent, paymentStatus, bookingStatus } = await BookingPaymentService.confirmPaymentFromStripe(paymentIntentId);
+      const { intent, paymentStatus, bookingStatus } = await bookingHandlerService.confirmPaymentFromStripe(paymentIntentId);
 
       // message (giữ Stripe data)
       let message = `Intent đang ở trạng thái: ${intent.status}`;

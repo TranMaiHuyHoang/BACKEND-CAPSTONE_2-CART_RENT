@@ -15,6 +15,7 @@ const reviewRoutes = require('./routes/review.route');
 const favoriteRoutes = require('./routes/favorite.route');
 // middleware for hand
 const errorHandler = require('./middlewares/errorHandler');
+const initCron = require('./services/cron.service'); // Import từ thư mục cron
 const app = express();
 
 
@@ -30,6 +31,10 @@ const profileRoutes = require('./routes/profile.route')
 require('dotenv').config();
 
 app.use(morgan('dev'));
+
+initCron();
+
+
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);

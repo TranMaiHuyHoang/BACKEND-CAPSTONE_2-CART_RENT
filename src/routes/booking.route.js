@@ -18,8 +18,13 @@ router.post(
   bookingController.cancelBookingWithRefund
 );
 
+router.post(
+  '/:bookingId/full-cancel',
+  bookingController.processFullCancellation
+);
+
 router.get("/getMyBooking", authMiddleware, bookingController.getMyBookings);
-router.post("/cancelBooking/:bookingId", authMiddleware, bookingController.cancelBooking)
+router.post("/cancelBookingOnly/:bookingId", authMiddleware, bookingController.cancelBookingOnly)
 router.post("/checkAvailability", bookingController.checkAvailability);
 
 

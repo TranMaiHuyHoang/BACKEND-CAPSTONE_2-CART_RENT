@@ -1,5 +1,5 @@
 const bookingService = require("../services/booking.service");
-const bookingPaymentService = require("../services/bookingPayment.service");
+const bookingHandlerService = require("../services/bookingHandler.service");
 
 class BookingController {
   async createBooking(req, res, next) {
@@ -20,11 +20,10 @@ class BookingController {
     const { bookingId } = req.params;
 
     // Gọi service đã viết sẵn
-    const result = await bookingPaymentService.cancelBookingWithRefund(bookingId);
+    const result = await bookingHandlerService.cancelBookingWithRefund(bookingId);
 
     return res.status(200).json({
-      success: true,
-      message: 'Booking đã được hủy và thực hiện hoàn tiền (nếu có).',
+      message: 'Yêu cầu hủy/hoàn tiền đã được ghi nhận và đang xử lý.',
       data: result,
     });
   } catch (err) {
@@ -32,6 +31,26 @@ class BookingController {
     return next(err);
   }
 }
+
+  async processFullCancellation(req, res, next) {
+    try {
+      const { bookingId } = req.params;
+      const { paymentIntentId = null, reason = 'requested_by_customer' } = req.body || {};
+
+      const result = await bookingHandlerService.processFullCancellation(
+        bookingId,
+        paymentIntentId,
+        reason
+      );
+
+      return res.status(202).json({
+        message: 'Yêu cầu full-cancel đã được ghi nhận và đang xử lý qua outbox.',
+        data: result,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  }
 
 
 
@@ -131,10 +150,10 @@ class BookingController {
     }
   }
 
-  async cancelBooking(req, res, next) {
+  async cancelBookingOnly(req, res, next) {
     try {
       const { bookingId } = req.params;
-      const result = await bookingService.cancelBooking(bookingId);
+      const result = await bookingService.cancelBookingOnly(bookingId);
       if (!result) {
         return res.status(404).json({
           message: "Không tìm thấy booking để hủy",

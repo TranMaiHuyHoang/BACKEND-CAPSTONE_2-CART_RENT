@@ -14,16 +14,27 @@ const QueryBuilder = require('../utils/queryBuilder');
 
 
 const PAYMENTDB_VALID_TRANSITIONS = {
-  'pending': ['successful', 'declined', 'failed'],
-  'failed': ['pending', 'declined'],
+  // processing chỉ dùng cho call ra Stripe (confirm/cancel/refund/reversal)
+  'pending': ['processing', 'successful', 'declined', 'failed', 'cancelled'],
+  'processing': ['successful', 'declined', 'failed', 'cancelled', 'refunded'],
+  'failed': ['pending', 'processing', 'declined', 'cancelled'],
   'successful': ['refunded'],
-  'declined': [],    // Trạng thái cuối
-  'refunded': []     // Trạng thái cuối
+  'declined': [],  // Trạng thái cuối (do lỗi thẻ/ngân hàng)
+  'cancelled': [], // Trạng thái cuối (do người dùng/hệ thống chủ động)
+  'refunded': []
+};
+
+const PAYMENT_REVERSAL_STATE = {
+  REFUNDED: 'refunded',
+  CANCELLED: 'cancelled',
 };
 
 class PaymentService {
+
+
   async ensureAmount(payment) {
     const booking = await BookingModel.findById(payment.booking_id);
+
     if (!booking) throwError('Không tìm thấy booking cho payment này', 404);
 
     if (payment.amount !== booking.total_price) {
@@ -37,7 +48,28 @@ class PaymentService {
 
 
 
+  async getRefundInfo(paymentIntentId) {
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId, {
+      expand: ['latest_charge.refunds']
+    });
 
+    const charge = pi.latest_charge;
+    if (charge && charge.refunded) {
+      // Lấy lệnh hoàn tiền cuối cùng
+      const refund = charge.refunds.data[0];
+      return {
+        isRefunded: true,
+        refundId: refund.id,
+        refundAmount: refund.amount,
+        refundCurrency: refund.currency,
+        refundStatus: refund.status, // thường là 'succeeded'
+        refundReason: refund.reason,
+        createdAt: refund.created, // Timestamp của Stripe
+        receiptUrl: refund.receipt_number // Số biên lai hoàn tiền
+      };
+    }
+    return { isRefunded: false };
+  };
 
 
   async getPaymentState(bookingId) {
@@ -65,7 +97,7 @@ class PaymentService {
   }
 
   async createPaymentIntent(body = {}) {
-    const { paymentId } = body;
+    const { paymentId, idempotencyKey } = body;
 
     const payment = await this.getPaymentDBById(paymentId);
 
@@ -83,9 +115,80 @@ class PaymentService {
         booking_id: payment.booking_id.toString(),
         payment_id: payment._id.toString()
       }
-    });
+    }, idempotencyKey ? { idempotencyKey } : undefined);
 
     return intent;
+  }
+
+  /**
+   * Bộ điều phối Stripe (Orchestrator): Quyết định hoàn tiền (Refund) hoặc Hủy lệnh giữ (Cancel).
+   * * @async
+   * @function handleStripeReversal
+   * @param {string} paymentIntentId - ID của Payment Intent từ Stripe.
+   * * @description
+   */
+  async handleStripeReversal(paymentIntentId) {
+    const payment = await PaymentModel.findOne({ stripe_payment_intent_id: paymentIntentId });
+    if (!payment) {
+      throwError('Không tìm thấy payment theo stripe_payment_intent_id', 404);
+    }
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    const OUTCOME_MAP = {
+      // TRƯỜNG HỢP 1: Tiền đã thu -> Phải hoàn (Refund)
+      succeeded: {
+        action: () => stripe.refunds.create({ payment_intent: paymentIntentId }),
+        data: {
+          paymentStatus: 'refunded',
+          bookingStatus: 'cancelled',
+          vehicleStatus: 'available',
+          actionType: 'refund'
+        }
+      },
+
+      // TRƯỜNG HỢP 2: Tiền đang chờ hoặc chưa thanh toán -> Chỉ cần Hủy (Cancel)
+      requires_capture: {
+        action: () => stripe.paymentIntents.cancel(paymentIntentId),
+        data: {
+          paymentStatus: 'cancelled',
+          bookingStatus: 'cancelled',
+          vehicleStatus: 'available',
+          actionType: 'cancel'
+        }
+      },
+      requires_payment_method: {
+        action: () => stripe.paymentIntents.cancel(paymentIntentId),
+        data: {
+          paymentStatus: 'cancelled',
+          bookingStatus: 'cancelled',
+          vehicleStatus: 'available',
+          actionType: 'cancel'
+        }
+      },
+
+      // TRƯỜNG HỢP 3: Đã hủy rồi (Phòng hờ trường hợp bấm nhầm 2 lần)
+      canceled: {
+        action: null,
+        data: {
+          paymentStatus: 'cancelled',
+          bookingStatus: 'cancelled',
+          vehicleStatus: 'available',
+          actionType: 'cancel'
+        }
+      }
+    };
+
+    const config = OUTCOME_MAP[pi.status];
+
+    if (!config) {
+      throw new Error(`Trạng thái Stripe ${pi.status} không được hỗ trợ xử lý đảo ngược.`);
+    }
+
+    if (config.action) {
+      await config.action();
+    }
+
+    return config.data;
   }
 
 
@@ -166,7 +269,7 @@ class PaymentService {
     return payment.toObject();
   }
 
-  
+
   async processRefund(paymentId, reason = 'requested_by_customer') {
     const payment = await PaymentModel.findById(paymentId);
 
@@ -182,7 +285,7 @@ class PaymentService {
     }
 
     const validReasons = ['requested_by_customer', 'fraudulent', 'duplicate'];
-      if (!validReasons.includes(reason)) {
+    if (!validReasons.includes(reason)) {
       throwError(`Lý do hoàn tiền không hợp lệ. Cho phép: ${validReasons.join(', ')}`);
     }
 
@@ -195,7 +298,7 @@ class PaymentService {
     if (refund.status !== 'succeeded') {
       throwError(`Stripe từ chối hoàn tiền: ${refund.failure_reason || 'Unknown error'}`);
     }
-    payment.status = 'refunded';
+    payment.payment_status = 'refunded';
     await payment.save();
 
     return refund
