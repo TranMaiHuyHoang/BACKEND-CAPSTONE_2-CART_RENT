@@ -1,3 +1,6 @@
+const request = require('supertest');
+const app = require('../app'); // Express app
+
 describe('Booking API Tests', () => {
     let token;
     let bookingId;
