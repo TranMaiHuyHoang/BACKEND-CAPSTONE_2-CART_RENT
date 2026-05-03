@@ -16,3 +16,4 @@ describe('Booking API Tests', () => {
         time: '10:00',
         note: 'Test booking',
     };
+});

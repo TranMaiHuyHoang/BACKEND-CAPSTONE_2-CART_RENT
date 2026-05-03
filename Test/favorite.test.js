@@ -11,3 +11,4 @@ describe('Favorite API Tests', () => {
     };
 
     const productId = '1234567890abcdef';
+});

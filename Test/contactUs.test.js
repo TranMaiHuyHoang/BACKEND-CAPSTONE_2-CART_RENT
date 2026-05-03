@@ -9,3 +9,4 @@ describe('Contact Us API Tests', () => {
         email: 'vana@example.com',
         message: 'I need support for my booking system',
     };
+});
