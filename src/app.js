@@ -1,5 +1,6 @@
 const express = require('express');
 var morgan = require('morgan');
+var cors = require('cors');
 // import routes
 const authRoutes = require('./routes/auth.route');
 const uploadRoutes = require('./routes/upload.route');
@@ -31,6 +32,13 @@ const profileRoutes = require('./routes/profile.route')
 require('dotenv').config();
 
 app.use(morgan('dev'));
+app.use(
+    cors({
+        origin: 'http://localhost:5000', // đổi theo frontend của bạn
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+        credentials: true, // nếu dùng cookie / auth
+    })
+);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
