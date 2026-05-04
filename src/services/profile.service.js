@@ -32,7 +32,17 @@ class ProfileService {
     }
 
     async updateProfile(userId, data) {
-        return await UserModel.findByIdAndUpdate(userId, data, { new: true }).select('-password');
+        const allowedFields = ['name', 'phone', 'age'];
+
+        const updates = {};
+        allowedFields.forEach(field => {
+            if (data.hasOwnProperty(field)) {
+                updates[field] = data[field];
+            }
+        });
+
+        return await UserModel.findByIdAndUpdate(userId, updates, { new: true })
+            .select('-password');
     }
 
     async deleteProfileById(userId) {
