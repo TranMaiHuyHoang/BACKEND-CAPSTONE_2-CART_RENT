@@ -128,7 +128,7 @@ class BookingService {
 
 
     // Find paginated
-    return BaseService.findPaginated(Booking, filter, sortOptions, pagination);
+    return BaseService.findPaginated(BookingModel, filter, sortOptions, pagination);
   }
 
   static async getBookingById(id) {
@@ -152,8 +152,6 @@ class BookingService {
   }
 
   
-
-
   static async cancelBookingOnly(bookingId, options = {}) {
     const { session } = options;
     const booking = await BookingModel.findById(bookingId);

@@ -105,6 +105,9 @@ class BookingController {
     const { vehicleId, pickupDate, returnDate, excludeBookingId } = req.body;
     try {
       const result = await bookingService.checkAvailability(vehicleId, pickupDate, returnDate, excludeBookingId);
+      if (result.isAvailable === false) {
+        return res.status(409).json(result);
+      }
       res.json(result);
     } catch (error) {
       next(error);
