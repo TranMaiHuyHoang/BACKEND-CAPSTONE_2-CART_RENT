@@ -20,3 +20,13 @@ describe('Rental Contract API - Full Flow Tests', () => {
         tenantNote: 'I want a quiet room near center',
     };
 });
+test("displays contract information correctly", () => {
+    render(<RentalContract contract={mockContract} />);
+
+    expect(screen.getByText(/SRC-001/i)).toBeInTheDocument();
+    expect(screen.getByText(/Nguyen Van A/i)).toBeInTheDocument();
+    expect(screen.getByText(/Toyota Camry/i)).toBeInTheDocument();
+    expect(screen.getByText(/2025-05-10/i)).toBeInTheDocument();
+    expect(screen.getByText(/2025-05-15/i)).toBeInTheDocument();
+    expect(screen.getByText(/250\$/i)).toBeInTheDocument();
+});
