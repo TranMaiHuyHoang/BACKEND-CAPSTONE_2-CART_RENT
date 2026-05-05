@@ -18,3 +18,16 @@ describe('Review API Tests - Product/Service Rating System', () => {
         comment: 'Service is excellent, very satisfied!',
     };
 });
+test("displays list of customer reviews", () => {
+    render(<Review reviews={mockReviews} />);
+
+    expect(screen.getByText(/Nguyen Van A/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tran Van B/i)).toBeInTheDocument();
+    expect(
+        screen.getByText(/Car was clean and service was good/i)
+    ).toBeInTheDocument();
+    expect(
+        screen.getByText(/Easy booking and friendly support/i)
+    ).toBeInTheDocument();
+});
+
