@@ -11,4 +11,11 @@ describe('Favorite API Tests', () => {
     };
 
     const productId = '1234567890abcdef';
+    test("displays correct number of favorite cars", () => {
+        render(<Favorite favorites={mockFavorites} />);
+
+        const items = screen.getAllByTestId("favorite-item");
+        expect(items.length).toBe(2);
+    });
+
 });

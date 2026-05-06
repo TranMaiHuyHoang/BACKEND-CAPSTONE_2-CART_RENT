@@ -8,4 +8,11 @@ describe('Map API Tests', () => {
         email: 'maptest@example.com',
         password: '12345678',
     };
+    test("renders search input for finding rental location", () => {
+        render(<Map />);
+
+        expect(
+            screen.getByPlaceholderText(/search location/i)
+        ).toBeInTheDocument();
+    });
 });

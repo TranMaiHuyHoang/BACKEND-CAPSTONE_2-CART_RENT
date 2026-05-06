@@ -23,3 +23,10 @@ describe('Profile API Tests', () => {
         token = res.body.accessToken;
     });
 });
+test("renders user information fields", () => {
+    render(<Profile />);
+
+    expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/phone/i)).toBeInTheDocument();
+});
