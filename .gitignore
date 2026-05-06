@@ -42,7 +42,8 @@ Thumbs.db
 document/
 PROJECT_PHASES_SMARTRENT.md
 
-
-#TMinh
-TMinh
+#Task runner
 Taskfile.yml
+
+#TMinh folder riêng
+TMinh/
