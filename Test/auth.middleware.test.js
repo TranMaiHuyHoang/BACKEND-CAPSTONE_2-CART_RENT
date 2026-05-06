@@ -26,5 +26,11 @@ describe('Auth Middleware', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   })
+  it('nên trả về 401 nếu không có Authorization header', async () => {
+    const res = await request(app).get('/api/protected');
 
+    expect(res.statusCode).toBe(401);
+    expect(res.body.message).toBe('Missing or invalid Authorization header');
+  });
+  
 });
