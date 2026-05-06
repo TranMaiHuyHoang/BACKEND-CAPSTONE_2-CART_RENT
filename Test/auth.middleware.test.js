@@ -32,5 +32,32 @@ describe('Auth Middleware', () => {
     expect(res.statusCode).toBe(401);
     expect(res.body.message).toBe('Missing or invalid Authorization header');
   });
-  
+  it('nên gọi next() và gán req.user khi token hợp lệ', async () => {
+    const mockUser = {
+      _id: '66f123456789abcdef123456',
+      role: 'user',
+      email: 'test@example.com',
+      name: 'Nguyễn Văn Test'
+    };
+
+    userModel.findById.mockResolvedValue(mockUser);
+
+    const token = jwt.sign(
+      { userId: mockUser._id },
+      process.env.ACCESS_TOKEN_SECRET || 'testsecret'
+    );
+
+    req.headers.authorization = `Bearer ${token}`;
+
+    await authMiddleware(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+    expect(req.user).toMatchObject({
+      userId: mockUser._id,
+      role: mockUser.role,
+      email: mockUser.email,
+      name: mockUser.name
+    });
+  });
 });
