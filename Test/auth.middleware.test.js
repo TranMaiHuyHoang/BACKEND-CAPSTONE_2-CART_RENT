@@ -1,6 +1,6 @@
 const request = require('supertest');
 const express = require('express');
-const authMiddleware = require('../../middlewares/auth.middleware'); // Đường dẫn đến file middleware
+const authMiddleware = require('../src/middlewares/auth.middleware'); // Đường dẫn đến file middleware
 const jwt = require('jsonwebtoken'); // Để tạo token giả
 const userModel = require('../src/models/user.model');
 
@@ -13,15 +13,7 @@ describe('Auth Middleware', () => {
   beforeAll(() => {
     app = express();
     app.use(express.json());
-
-    // Test route sử dụng middleware
-    app.get('/api/protected', authMiddleware, (req, res) => {
-      res.json({
-        message: 'Access granted',
-        user: req.user
-      });
-    });
-  });
+    })
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -59,5 +51,31 @@ describe('Auth Middleware', () => {
       email: mockUser.email,
       name: mockUser.name
     });
+  });
+  it('nên trả về 401 nếu header không bắt đầu bằng Bearer', async () => {
+    req.headers.authorization = 'Basic abcdef123';
+
+    await authMiddleware(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Missing or invalid Authorization header'
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('nên trả về 401 khi verifyAccessToken throw error (token hết hạn, sai signature...)', async () => {
+    req.headers.authorization = 'Bearer some.token.here';
+
+    // Giả lập lỗi từ verifyAccessToken
+    jest.spyOn(require('../../utils/jwt'), 'verifyAccessToken').mockImplementation(() => {
+      throw new Error('Invalid token');
+    });
+
+    await authMiddleware(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Unauthorized' });
+    expect(next).not.toHaveBeenCalled();
   });
 });
