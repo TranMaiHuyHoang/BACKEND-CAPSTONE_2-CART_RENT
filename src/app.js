@@ -17,6 +17,7 @@ const favoriteRoutes = require('./routes/favorite.route');
 const rentalContractRoutes = require('./routes/rentalContract.route');
 // middleware for hand
 const errorHandler = require('./middlewares/errorHandler');
+const initCron = require('./services/cron.service'); // Import từ thư mục cron
 const app = express();
 
 
@@ -32,13 +33,31 @@ const profileRoutes = require('./routes/profile.route')
 require('dotenv').config();
 
 app.use(morgan('dev'));
-app.use(
-    cors({
-        origin: 'http://localhost:5000', // đổi theo frontend của bạn
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-        credentials: true, // nếu dùng cookie / auth
-    })
-);
+
+initCron();
+const allowedOrigins = new Set([
+  process.env.FRONTEND_ORIGIN || 'http://localhost:5000', // frontend origin, sửa nếu cần
+    'http://127.0.0.1:5000',
+]);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.has(origin)) {
+      callback(null, origin);
+    } else {
+        const err = new Error(`Origin ${origin} không được phép truy cập API này`);
+      err.statusCode = 403;
+      console.error('CORS blocked: ', err.message);
+      callback(err);
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true, // nếu dùng cookie / auth
+};
+
+app.use(cors(corsOptions));
+
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);

@@ -24,8 +24,8 @@ class ProfileController {
 
   async updateProfile(req, res, next) {
     try {
-        const userId = req.params.userId
-        const body = req.body
+      const userId = req.params.userId
+      const body = req.body
       const updatedUser = await ProfileService.updateProfile(userId, body);
       if (!updatedUser) {
         return res.status(404).json({ message: 'Không tìm thấy hồ sơ để cập nhật' });
@@ -33,6 +33,24 @@ class ProfileController {
       res.status(200).json({ message: 'Cập nhật hồ sơ thành công', data: updatedUser });
     } catch (err) {
       next(err);
+    }
+  }
+
+  async getMyProfile(req, res, next) {
+    try {
+      const data = await ProfileService.getMyProfile(req.user.userId);
+      return res.status(200).json({ message: "Lấy hồ sơ của tôi thành công", data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateMyProfile(req, res, next) {
+    try {
+      const data = await ProfileService.updateMyProfile(req.user.userId, req.body);
+      return res.status(200).json({ message: "Đã cập nhật hồ sơ của tôi", data });
+    } catch (error) {
+      next(error);
     }
   }
 

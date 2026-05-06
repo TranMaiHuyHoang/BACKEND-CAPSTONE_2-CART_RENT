@@ -12,6 +12,22 @@ router.post(
   PaymentController.createPaymentForBooking
 );
 
+router.post(
+  '/:bookingId/cancel-refund',
+  // <--- thêm middleware xác thực / validate nếu cần ---
+  bookingController.cancelBookingWithRefund
+);
+
+router.post(
+  '/:bookingId/full-cancel',
+  bookingController.processFullCancellation
+);
+
+router.get("/getMyBooking", authMiddleware, bookingController.getMyBookings);
+router.post("/cancelBookingOnly/:bookingId", authMiddleware, bookingController.cancelBookingOnly)
+router.post("/checkAvailability", bookingController.checkAvailability);
+
+
 router.post("/createBooking", authMiddleware, bookingValidation.createBooking, validate, bookingController.createBooking);
 router.post("/getListBookings", authMiddleware, bookingValidation.getListBookings, validate, bookingController.getListBookings);
 router.get("/getBookingById/:bookingId", authMiddleware, bookingValidation.getBookingById, validate, bookingController.getBookingById);
