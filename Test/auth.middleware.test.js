@@ -68,7 +68,7 @@ describe('Auth Middleware', () => {
     req.headers.authorization = 'Bearer some.token.here';
 
     // Giả lập lỗi từ verifyAccessToken
-    jest.spyOn(require('../../utils/jwt'), 'verifyAccessToken').mockImplementation(() => {
+    jest.spyOn(require('../src/utils/jwt'), 'verifyAccessToken').mockImplementation(() => {
       throw new Error('Invalid token');
     });
 
