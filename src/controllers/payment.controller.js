@@ -96,6 +96,7 @@ class PaymentController {
       if (!updatedPayment) {
         return res.status(404).json({ message: "Không tìm thấy payment để cập nhật" });
       }
+      return res.status(200).json({message: "Cập nhật trạng thái payment thành công"});
     } catch (err) {
       next(err);
     }

@@ -98,7 +98,6 @@ class bookingHandlerService {
                         bookingId,
                         'waiting_payment'
                     );
-
                 }
 
                 let intent;

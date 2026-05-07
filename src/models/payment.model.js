@@ -21,10 +21,6 @@ const paymentSchema = new mongoose.Schema(
         transaction_code: { type: String, trim: true },
         paid_at: { type: Date },
         paid_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-        last_payment_attempt_at: {
-        type: Date,
-        default: null
-      }
 
     },
     { timestamps: true }

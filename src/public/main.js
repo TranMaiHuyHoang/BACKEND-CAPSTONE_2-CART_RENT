@@ -20,7 +20,7 @@ function renderUI() {
 
 async function handleLogin() {
   try {
-    await login("admin@gmail.com", "123456");
+    await login("minhadmintest@gmail.com", "123456");
     renderUI();
   } catch (err) {
     console.error("Login error:", err);
