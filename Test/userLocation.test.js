@@ -15,4 +15,12 @@ describe('User Location API Tests - Geolocation System', () => {
         longitude: 108.2022,
         address: 'Da Nang, Vietnam',
     };
+
+    const res = await request(app)
+        .post('/api/user/location')
+        .set('Authorization', `Bearer ${token}`)
+        .send(locationPayload);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('message');
 });
