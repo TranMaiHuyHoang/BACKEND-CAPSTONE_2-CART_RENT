@@ -17,5 +17,15 @@ describe('Favorite API Tests', () => {
         const items = screen.getAllByTestId("favorite-item");
         expect(items.length).toBe(2);
     });
+    test('adds vehicle to favorite list successfully', async () => {
+        const res = await request(app)
+            .post('/api/favorites')
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                vehicleId,
+            });
 
+        expect([200, 201]).toContain(res.statusCode);
+        expect(res.body).toHaveProperty('message');
+    });
 });
