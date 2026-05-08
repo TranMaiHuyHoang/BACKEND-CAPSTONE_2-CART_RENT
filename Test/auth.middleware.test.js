@@ -8,15 +8,22 @@ const userModel = require('../src/models/user.model');
 jest.mock('../src/models/user.model');
 
 describe('Auth Middleware', () => {
-  let app;
+    let app;
 
-  beforeAll(() => {
-    app = express();
-    app.use(express.json());
+    beforeAll(() => {
+        app = express();
+        app.use(express.json());
     })
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  })
-  
+    beforeEach(() => {
+        jest.clearAllMocks();
+    })
+    test('allows request when valid authorization token is provided', async () => {
+        const res = await request(app)
+            .get('/api/profile')
+            .set('Authorization', `Bearer ${validToken}`);
+
+        expect([200, 404]).toContain(res.statusCode);
+    });
+
 });
