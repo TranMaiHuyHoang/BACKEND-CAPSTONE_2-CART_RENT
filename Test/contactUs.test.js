@@ -30,4 +30,15 @@ describe('Contact Us API Tests', () => {
             "I want to rent a car from SmartRentCar."
         );
     });
+    test('returns validation error when customer email is invalid', async () => {
+        const res = await request(app)
+            .post('/api/contact')
+            .send({
+                ...contactPayload,
+                email: 'invalid-email',
+            });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body).toHaveProperty('message');
+    });
 });
