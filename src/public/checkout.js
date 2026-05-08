@@ -71,13 +71,13 @@ async function createPaymentForBooking(bookingId) {
   const data = await api.get(`/payment/getPaymentState/${bookingId}`, {
   });
   console.log("payment status:", data.paymentStatus, "booking status:", data.bookingStatus);
-  if (data.bookingStatus === "paid" && data.paymentStatus === "successful") {
-    return {
-      error: "Booking đã được thanh toán trước đó. Không thể thanh toán lại.",
-      clientSecret: null
-    };
+  // if (data.bookingStatus === "paid" && data.paymentStatus === "successful") {
+  //   return {
+  //     error: "Booking đã được thanh toán trước đó. Không thể thanh toán lại.",
+  //     clientSecret: null
+  //   };
 
-  }
+  // }
 
   const res = await api.post(`/booking/${bookingId}/createPayment/`);
   console.log("Create Payment:", res);
@@ -119,7 +119,70 @@ async function getBookingWithDetails(bookingId) {
 ///
 
 
+async function handleCancelBooking(bookingId, paymentIntentId) {
 
+    if (!confirm("Bạn có chắc chắn muốn hủy và nhả xe ngay lập tức?")) return;
+
+    const btnCancel = document.getElementById('btn-cancel');
+    const btnSubmit = document.getElementById('submit');
+
+    // 2. Khóa UI ngay lập tức
+    if (btnCancel) btnCancel.disabled = true;
+    if (btnSubmit) btnSubmit.disabled = true;
+
+    try {
+        const response = await fetch('/api/booking/cancel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bookingId, paymentIntentId,
+              reason: 'requested_by_customer' // Lý do người dùng chủ động
+             })
+        });
+
+        if (response.ok) {
+            alert("Đã giải phóng xe thành công!");
+            window.location.href = "/vehicles"; // Thoát luồng checkout
+        } else {
+            throw new Error("Không thể hủy đơn hàng trên hệ thống.");
+        }
+    } catch (err) {
+        alert(err.message);
+        // Nhả phanh nếu lỗi mạng để khách thử lại
+        if (btnCancel) {
+            btnCancel.disabled = false;
+            btnCancel.innerText = "Hủy và chọn xe khác";
+        }
+    }
+}
+
+async function handleFullCancelTest(bookingId) {
+  if (!confirm("Bạn có chắc chắn muốn gửi yêu cầu Full Cancel (test)?")) return;
+
+  const btn = document.getElementById("btn-full-cancel-test");
+  if (btn) btn.disabled = true;
+
+  try {
+    const response = await fetch(`/api/booking/${bookingId}/full-cancel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reason: "requested_by_customer",
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data?.message || "Gửi yêu cầu full-cancel thất bại.");
+    }
+
+    alert(data?.message || "Đã gửi yêu cầu full-cancel.");
+    console.log("Full cancel response:", data);
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
 
 
 async function initPaymentFlow(bookingId) {
@@ -140,6 +203,17 @@ async function initPaymentFlow(bookingId) {
     }
 
     renderUI(booking, clientSecret);
+    const btnCancel = document.getElementById('btn-cancel');
+    if (btnCancel) {
+      // Dùng trực tiếp paymentIntentId
+      btnCancel.onclick = () => handleCancelBooking(bookingId, paymentIntentId);
+    }
+
+    const btnFullCancelTest = document.getElementById("btn-full-cancel-test");
+    if (btnFullCancelTest) {
+      btnFullCancelTest.onclick = () => handleFullCancelTest(bookingId);
+    }
+
   } catch (err) {
     console.error("Lỗi khi khởi tạo Payment Flow:", err);
     alert(err.message);

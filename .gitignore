@@ -47,3 +47,4 @@ Taskfile.yml
 
 #TMinh folder riêng
 TMinh/
+.continue/

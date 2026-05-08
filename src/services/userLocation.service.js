@@ -25,8 +25,28 @@ class UserLocationService {
     return await UserLocation.findOneAndDelete({ user: userId })
   }
 
+  async getShowroomsLocation() {
+    const showroomLocations = [];
 
+    // 1. Lấy cursor từ UserLocation
+    const cursor = UserLocation.find().cursor();
 
+    // 2. Duyệt từng bản ghi trong cursor
+    for await (const location of cursor) {
+      const user = await userModel.findById(location.user);
+      if (user && user.role === 'showroom') {
+        showroomLocations.push({
+          userId: location.user,
+          name: user.name,
+          role: user.role,
+          address: location.address,
+          latitude: location.latitude,
+          longitude: location.longitude,
+        });
+      }
+    }
+    return showroomLocations;
+  }
 }
 
 module.exports = new UserLocationService();

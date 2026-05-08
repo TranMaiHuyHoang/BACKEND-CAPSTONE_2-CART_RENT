@@ -16,4 +16,12 @@ router.get(
   '/placeAutocomplete',
   mapController.autocomplete
 );
+
+router.get(
+  '/directions',
+  mapController.directions
+);
+
+
+
 module.exports = router;

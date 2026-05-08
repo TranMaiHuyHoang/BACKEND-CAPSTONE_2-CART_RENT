@@ -8,6 +8,13 @@ class VehicleService {
     async createVehicle(vehicle, userId) {
         return vehicleModel.create({ ...vehicle, added_by: userId });
     }
+    async updateVehicleStatus(vehicleId, status, options = {}) {
+        return vehicleModel.findByIdAndUpdate(
+            vehicleId,
+            { status },
+            { new: true, ...options }
+        );
+    }
 
     async getListVehicles(body = {}) {
         const { search, vehicle_type, added_by, sort_by, sort_by_price, page, limit } = body;
