@@ -19,5 +19,16 @@ describe('Auth API Tests', () => {
         expect(res.body).toHaveProperty("user");
         expect(res.body.user.email).toBe(testUser.email);
     });
+    test('prevents registering account with existing email address', async () => {
+        await request(app)
+            .post('/api/auth/register')
+            .send(userData);
 
+        const res = await request(app)
+            .post('/api/auth/register')
+            .send(userData);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body).toHaveProperty('message');
+    });
 });
