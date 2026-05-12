@@ -20,7 +20,10 @@ describe("JWT helper functions", () => {
   test("token should expire according to JWT_EXPIRES_IN", () => {
     const token = signAccessToken(payload);
     const decoded = verifyAccessToken(token);
-
+    expect(decoded.exp).toBeDefined();
+    expect(decoded.iat).toBeDefined();
+    // exp - iat ≈ 2h (7200s)
+    expect(decoded.exp - decoded.iat).toBeCloseTo(7200, -2);
 })
 
 });
