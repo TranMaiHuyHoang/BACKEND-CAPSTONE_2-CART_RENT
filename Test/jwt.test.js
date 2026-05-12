@@ -13,5 +13,7 @@ describe("JWT helper functions", () => {
     const decoded = verifyAccessToken(token);
     expect(decoded.userId).toBe(payload.userId);
   });
-  
+    test("verifyAccessToken should throw error for invalid token", () => {
+    expect(() => verifyAccessToken("invalid.token")).toThrow();
+  });
 });
