@@ -7,5 +7,11 @@ describe("JWT helper functions", () => {
     process.env.JWT_SECRET = "test_secret";
     process.env.JWT_EXPIRES_IN = "1h";
   });
+  test("signAccessToken should return a valid JWT", () => {
+    const token = signAccessToken(payload);
+    expect(typeof token).toBe("string");
+    const decoded = verifyAccessToken(token);
+    expect(decoded.userId).toBe(payload.userId);
+  });
   
 });
