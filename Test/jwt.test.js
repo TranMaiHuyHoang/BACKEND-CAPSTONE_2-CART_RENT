@@ -18,7 +18,9 @@ describe("JWT helper functions", () => {
   });
 
   test("token should expire according to JWT_EXPIRES_IN", () => {
-  
+    const token = signAccessToken(payload);
+    const decoded = verifyAccessToken(token);
+
 })
 
 });
