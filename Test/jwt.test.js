@@ -16,4 +16,9 @@ describe("JWT helper functions", () => {
     test("verifyAccessToken should throw error for invalid token", () => {
     expect(() => verifyAccessToken("invalid.token")).toThrow();
   });
+
+  test("token should expire according to JWT_EXPIRES_IN", () => {
+  
+})
+
 });
