@@ -41,4 +41,21 @@ describe('Contact Us API Tests', () => {
         expect(res.statusCode).toBe(400);
         expect(res.body).toHaveProperty('message');
     });
+    it('should fail when required fields are missing', async () => {
+        const res = await request(app)
+            .post('/api/contact')
+            .send({
+                email: 'john@example.com',
+                message: 'Missing name and subject'
+            });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body).toHaveProperty('errors');
+        expect(res.body.errors).toContainEqual(expect.objectContaining({
+            field: 'name'
+        }));
+        expect(res.body.errors).toContainEqual(expect.objectContaining({
+            field: 'subject'
+        }));
+    });
 });
