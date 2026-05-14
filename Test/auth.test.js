@@ -31,4 +31,14 @@ describe('Auth API Tests', () => {
         expect(res.statusCode).toBe(400);
         expect(res.body).toHaveProperty('message');
     });
+    it('should fail when email already exists', async () => {
+        const res = await request(app)
+            .post('/api/users/register')
+            .send(testUser);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body).toHaveProperty('error');
+        expect(res.body.error).toMatch(/email already exists/i);
+    });
+
 });
