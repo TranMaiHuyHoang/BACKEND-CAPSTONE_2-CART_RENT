@@ -40,4 +40,15 @@ describe('Booking API Tests', () => {
         expect(res.statusCode).toBe(200);
         expect(Array.isArray(res.body)).toBe(true);
     });
+    it('should create a new booking', async () => {
+        const res = await request(app)
+            .post('/api/bookings')
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                carId,
+                startDate: '2026-05-20',
+                endDate: '2026-05-22'
+            });
+    });
+
 });
